@@ -17,8 +17,8 @@ services:
 
   api:
     build:
-      context: ../../
-      dockerfile: services/api/Dockerfile
+      context: ../../services/api
+      dockerfile: Dockerfile
     container_name: navi-api-dev
     command: bundle exec rails server -b 0.0.0.0 -p 3000
     ports:
