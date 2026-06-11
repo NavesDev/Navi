@@ -1,22 +1,22 @@
 # Google Cloud Deployment Guide - Navi
 
-Este diretório armazena scripts, documentações e configurações relacionadas ao provisionamento e implantação no **Google Cloud Platform (GCP)**.
+This directory stores scripts, documentations, and configurations related to provisioning and deployment on **Google Cloud Platform (GCP)**.
 
-A arquitetura do backend do Navi consiste em executar uma instância Rails API conteinerizada de forma contínua em uma máquina virtual (VM) no **Compute Engine**.
+The Navi backend architecture runs a containerized Rails API instance continuously on a **Compute Engine** virtual machine (VM).
 
 ---
 
-## 1. Setup da VM no Compute Engine
+## 1. VM Provisioning in Compute Engine
 
-### Recomendação de Instância (24/7)
-* **Família de Máquina**: `e2-micro` (para testes iniciais, qualificada no Free Tier) ou `e2-small` / `e2-medium` (recomendado para produção inicial).
-* **Sistema Operacional**: Ubuntu Server 22.04 LTS ou Debian 12.
-* **Disco**: 20GB a 50GB SSD (Balanced Persistent Disk).
+### Instance Recommendations (24/7)
+* **Machine Family**: `e2-micro` (for initial testing, qualifies for Free Tier) or `e2-small` / `e2-medium` (recommended for production).
+* **Operating System**: Ubuntu Server 22.04 LTS or Debian 12.
+* **Disk**: 20GB to 50GB SSD (Balanced Persistent Disk).
 
-### Provisionamento da VM (via gcloud CLI)
+### Provision VM (via gcloud CLI)
 ```bash
 gcloud compute instances create navi-api-production \
-    --project="SEU_PROJETO_GCP" \
+    --project="YOUR_GCP_PROJECT" \
     --zone="us-central1-a" \
     --machine-type="e2-small" \
     --image-family="ubuntu-2204-lts" \
@@ -24,38 +24,38 @@ gcloud compute instances create navi-api-production \
     --boot-disk-size="30GB" \
     --boot-disk-type="pd-balanced" \
     --tags=http-server,https-server \
-    --address="ENDERECO_IP_ESTATICO_RESERVADO"
+    --address="RESERVED_STATIC_IP_ADDRESS"
 ```
 
 ---
 
-## 2. Firewall e Rede
-Para permitir acesso à API externa, você deve expor as portas HTTP e HTTPS na VM.
+## 2. Firewall and Networking
+To allow external API access, expose HTTP and HTTPS ports on the VM.
 
-1. **IP Estático**: Reserve um IP externo estático no GCP console (`Rede VPC > Endereços IP externos`) para garantir que o IP da VM não mude ao reiniciar.
-2. **Regras de Firewall**: Garanta que as tags `http-server` (porta 80) e `https-server` (porta 443) estão ativas e permitidas.
+1. **Static IP**: Reserve a static external IP address in the GCP console (`VPC Network > External IP addresses`) to ensure the VM's IP doesn't change when restarted.
+2. **Firewall Rules**: Ensure that the `http-server` (port 80) and `https-server` (port 443) tags are active and allowed.
 
 ---
 
-## 3. Estratégia de Deploy: Kamal (Padrão Rails 8)
+## 3. Deployment Strategy: Kamal (Rails 8 Default)
 
-O Rails 8 vem configurado nativamente com o **Kamal** para deploys direto em VMs limpas sem necessidade de PaaS (como Heroku). O Kamal envia imagens Docker via SSH e configura o servidor web automaticamente com SSL embutido.
+Rails 8 is natively configured with **Kamal** for direct containerized deployments onto bare VMs without the need for a PaaS (like Heroku). Kamal deploys Docker images via SSH and configures the web server with built-in SSL.
 
-### Passos de Deploy com Kamal:
+### Deployment Steps with Kamal:
 
-1. **Configurar as credenciais** em `services/api/.kamal/secrets` (este arquivo está no `.gitignore`):
+1. **Set secrets** in `services/api/.kamal/secrets` (this file is in `.gitignore`):
    ```bash
-   KAMAL_REGISTRY_PASSWORD="sua-senha-do-docker-registry"
-   API_DATABASE_PASSWORD="sua-senha-db-producao"
-   DATABASE_URL="postgres://usuario:senha@neon-host/db_name?sslmode=require"
+   KAMAL_REGISTRY_PASSWORD="your-docker-registry-password"
+   API_DATABASE_PASSWORD="your-production-db-password"
+   DATABASE_URL="postgres://user:password@neon-host/db_name?sslmode=require"
    ```
-2. **Configurar o deploy** em `services/api/config/deploy.yml` com o IP externo reservado e repositório Docker.
-3. **Executar o setup inicial** a partir do diretório `services/api`:
+2. **Configure deploy settings** in `services/api/config/deploy.yml` with your reserved external IP and Docker repository.
+3. **Run initial setup** from the `services/api` directory:
    ```bash
-   # Configura a VM e realiza o primeiro deploy
+   # Configures the VM and performs the first deploy
    kamal setup
    ```
-4. **Próximos deploys**:
+4. **Subsequent deployments**:
    ```bash
    kamal deploy
    ```

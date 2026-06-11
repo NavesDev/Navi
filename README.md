@@ -1,164 +1,164 @@
 # Navi 🌌
 
-Navi é um aplicativo de assistente pessoal com inteligência artificial projetado para ajudar você a gerenciar suas finanças, metas, hábitos, projetos e produtividade por meio de conversas em linguagem natural. A plataforma conta também com um dashboard administrativo moderno para visualização gráfica das informações estruturadas.
+Navi is an AI-powered personal assistant app designed to help you manage your finances, goals, habits, projects, and productivity through natural language conversation. The platform also features a modern administrative web dashboard for structured data visualization.
 
 ---
 
-## 👁️ Visão do Produto
+## 👁️ Product Vision
 
-O Navi simplifica o autogerenciamento. Em vez de abrir aplicativos complexos e preencher formulários extensos para registrar um gasto, acompanhar um hábito ou atualizar uma tarefa, o usuário simplesmente conversa com o Navi. O assistente de IA interpreta a intenção, processa a informação e atualiza os dados correspondentes de forma transparente.
+Navi simplifies self-management. Instead of opening complex apps and filling out extensive forms to record an expense, log a habit, or update a task, the user simply chats with Navi. The AI assistant interprets the intent, processes the information, and updates the database transparently.
 
 ---
 
-## 🛠️ Stack Definida
+## 🛠️ Tech Stack
 
-O projeto utiliza uma arquitetura moderna e escalável de **Monorepo**:
+The project uses a modern and scalable **Monorepo** architecture:
 
-* **Gerenciador de Monorepo**: [pnpm Workspaces](https://pnpm.io/workspaces) para compartilhamento ágil de pacotes locais.
-* **Frontend Mobile**: [React Native](https://reactnative.dev/) com [Expo](https://expo.dev/) (TypeScript) para rodar nativamente em iOS e Android.
-* **Frontend Web (Dashboard)**: [React](https://react.dev/) com [Vite](https://vite.dev/) (TypeScript) para a área analítica administrativa.
-* **Backend**: [Ruby on Rails 8.1](https://rubyonrails.org/) em modo API, fornecendo velocidade de desenvolvimento, segurança e estrutura robusta.
-* **Banco de Dados**: [PostgreSQL](https://www.postgresql.org/) hospedado no [Neon Serverless PostgreSQL](https://neon.tech/) para escalabilidade dinâmica e branching de dados.
-* **Infraestrutura & Deploy**:
+* **Monorepo Manager**: [pnpm Workspaces](https://pnpm.io/workspaces) for quick local package sharing.
+* **Mobile Frontend**: [React Native](https://reactnative.dev/) with [Expo](https://expo.dev/) (TypeScript) running natively on iOS and Android.
+* **Web Frontend (Dashboard)**: [React](https://react.dev/) with [Vite](https://vite.dev/) (TypeScript) for the analytics administrative area.
+* **Backend**: [Ruby on Rails 8.1](https://rubyonrails.org/) in API mode, providing fast development speed, security, and a robust architecture.
+* **Database**: [PostgreSQL](https://www.postgresql.org/) hosted on [Neon Serverless PostgreSQL](https://neon.tech/) for dynamic scaling and database branching.
+* **Infrastructure & Deployment**:
   * **Local**: Docker & Docker Compose.
-  * **Produção VM**: Google Cloud Compute Engine (VM 24/7) configurado com [Kamal](https://kamal-deploy.org/) para implantação simplificada com contêineres Docker.
-* **Inteligência Artificial (Futuro)**: Integração com a API do Google Gemini via SDK oficial.
+  * **Production VM**: Google Cloud Compute Engine (24/7 VM) configured with [Kamal](https://kamal-deploy.org/) for simple containerized deployment.
+* **Artificial Intelligence (Future)**: Integration with the Google Gemini API using the official SDK.
 
 ---
 
-## 📂 Estrutura do Monorepo
+## 📂 Monorepo Structure
 
 ```
 navi/
 ├── apps/
-│   ├── mobile/             # Aplicativo React Native & Expo
-│   └── web/                # Dashboard administrativo React & Vite
+│   ├── mobile/             # React Native & Expo Mobile App
+│   └── web/                # React & Vite Administrative Dashboard
 ├── services/
-│   └── api/                # API Backend em Ruby on Rails 8.1
+│   └── api/                # Ruby on Rails 8.1 API Backend
 ├── packages/
-│   ├── config/             # Configurações compartilhadas (TypeScript, etc.)
-│   ├── shared/             # Utilitários compartilhados (formatação, cálculos de streak, etc.)
-│   └── types/              # Definições de tipos TS do domínio do app
+│   ├── config/             # Shared tooling config (TypeScript tsconfig, etc.)
+│   ├── shared/             # Shared utilities (formatting, habit streaks, etc.)
+│   └── types/              # Domain TypeScript types shared across apps
 ├── infra/
-│   ├── docker/             # Configurações do Docker & Compose local
-│   └── google-cloud/       # Documentação de infraestrutura no GCP
-├── docs/                   # Documentação arquitetural, diagramas e guias
-├── package.json            # Scripts de automação do monorepo
-├── pnpm-workspace.yaml     # Configuração de workspaces do pnpm
-└── README.md               # Documentação principal
+│   ├── docker/             # Local Docker & Compose configuration
+│   └── google-cloud/       # GCP infrastructure documentation and scripts
+├── docs/                   # System architecture documentation, diagrams, and guides
+├── package.json            # Monorepo automation scripts
+├── pnpm-workspace.yaml     # pnpm workspace definition
+└── README.md               # Main repository documentation (English)
 ```
 
 ---
 
-## 🎯 Funcionalidades Planejadas
+## 🎯 Planned Features
 
-1. **Interface de Chat com IA**: Entrada em linguagem natural interpretada pela IA para categorizar comandos automaticamente.
-2. **Controle Financeiro Simplificado**: Registro instantâneo de receitas/despesas, saldo atualizado, metas de economia e categorização automatizada de transações.
-3. **Gestão de Hábitos**: Registro de hábitos diários/semanais com gamificação (streaks de dias consecutivos).
-4. **Metas Pessoais**: Acompanhamento de progresso de metas de curto, médio e longo prazo.
-5. **Gerenciador de Projetos e Tarefas**: Organização de fluxos de trabalho, listas de afazeres, prazos e lembretes integrados.
-6. **Dashboard Analítico**: Painel web com gráficos interativos de fluxo de caixa, performance de hábitos e tarefas concluídas.
-
----
-
-## 🧠 Decisões Técnicas
-
-* **Monorepo com pnpm Workspaces**: Facilita a manutenção de tipos TypeScript unificados (`@navi/types`) e utilitários de formatação comuns (`@navi/shared`), reduzindo a duplicação de dependências e mantendo o build rápido.
-* **Rails em Modo API**: Rails elimina a necessidade de escolher e integrar dezenas de bibliotecas para autenticação, envio de e-mails, processamento de jobs secundários (Solid Queue) e cache (Solid Cache), que já vêm nativos no Rails 8.
-* **Neon PostgreSQL**: A estrutura serverless do Neon reduz os custos de banco de dados para quase zero no desenvolvimento e inicialização do produto, além de oferecer instant backups e branches de dados para testes isolados.
-* **Kamal no Google Cloud VM**: O Kamal nos liberta da dependência de plataformas proprietárias (PaaS) caras, permitindo rodar tudo de forma simples em uma única máquina virtual Compute Engine sob demanda.
+1. **AI Chat Interface**: Natural language inputs interpreted by AI to automatically map and execute actions.
+2. **Simplified Financial Control**: Instant income/expense recording, updated balance tracking, savings goals, and automated transaction categorization.
+3. **Habit Tracker**: Daily/weekly habits with streak gamification.
+4. **Personal Goals**: Progress tracking for short, medium, and long-term goals.
+5. **Productivity & Tasks**: To-do lists, workflows, deadlines, and integrated reminders.
+6. **Analytical Dashboard**: Web interface with interactive charts for cash flow, habit consistency, and task completion.
 
 ---
 
-## 🚀 Como Instalar e Executar
+## 🧠 Technical Decisions
 
-### Pré-requisitos
+* **pnpm Workspaces**: Facilitates maintaining unified TypeScript types (`@navi/types`) and common helper functions (`@navi/shared`), reducing dependency duplication and speeding up builds.
+* **Rails API Mode**: Rails eliminates the need to integrate separate libraries for authentication, mailers, background processing (Solid Queue), and caching (Solid Cache) as these are native to Rails 8.
+* **Neon PostgreSQL**: Serverless PostgreSQL keeps database costs near zero in development/early phases, and offers instant backups and database branches for isolated testing.
+* **Kamal on GCP Compute Engine**: Kamal frees us from proprietary PaaS lock-ins, running containerized builds on a single virtual machine efficiently.
+
+---
+
+## 🚀 Installation and Setup
+
+### Prerequisites
 * Node.js >= 22.0.0
 * pnpm >= 11.0.0
-* Ruby >= 3.4.0 e Rails >= 8.1.0
-* Docker & Docker Compose (opcional para banco local)
+* Ruby >= 3.4.0 and Rails >= 8.1.0
+* Docker & Docker Compose (optional for local database)
 
-### 1. Instalar as dependências do Monorepo
-Na raiz do projeto, execute:
+### 1. Install Dependencies
+Run the following at the root of the workspace:
 ```bash
 pnpm install
 ```
 
 ---
 
-### 2. Executar o Aplicativo Mobile (Expo)
+### 2. Run the Mobile App (Expo)
 
-Para iniciar o servidor Metro Bundler do Expo para desenvolvimento mobile:
+To start the Metro Bundler server for mobile development:
 ```bash
-# Iniciar o Expo pelo script do monorepo
+# Start Metro via monorepo script
 pnpm dev:mobile
 
-# Ou navegue até a pasta e execute diretamente
+# Or navigate to the directory and run directly
 cd apps/mobile
 pnpm start
 ```
-Você pode abrir o app em um simulador Android/iOS ou escanear o código QR com o app **Expo Go** no seu smartphone físico.
+You can open the app in an Android/iOS emulator or scan the QR code using the **Expo Go** app on your physical device.
 
 ---
 
-### 3. Configurar e Executar o Backend (Rails API)
+### 3. Run the Backend API (Rails)
 
-#### Configurando o Neon PostgreSQL (`DATABASE_URL`)
-Para o desenvolvimento local ou produção conectando ao Neon, você precisa configurar a variável de ambiente `DATABASE_URL`.
+#### Configuring Neon PostgreSQL (`DATABASE_URL`)
+To connect to Neon in development or production, define the `DATABASE_URL` environment variable.
 
-1. Crie um banco de dados no painel da **Neon**.
-2. Copie a string de conexão fornecida (que deve conter o parâmetro `sslmode=require`).
-3. Defina a variável de ambiente localmente. Você pode criar um arquivo `.env` na raiz do diretório `services/api/`:
+1. Create a database in your **Neon** console.
+2. Copy the connection string (ensure it contains `sslmode=require`).
+3. Define the connection string locally. You can create a `.env` file in the `services/api/` folder:
 
 ```env
-DATABASE_URL="postgresql://[USUARIO]:[SENHA]@[HOST-NEON]/neondb?sslmode=require"
+DATABASE_URL="postgresql://[USER]:[PASSWORD]@[NEON-HOST]/neondb?sslmode=require"
 ```
 
-*Nota: O `database.yml` do projeto está configurado para ler automaticamente esta variável se ela estiver definida.*
+*Note: The project's `database.yml` is configured to automatically read this environment variable if set.*
 
-#### Rodar o Banco de Dados Localmente (PostgreSQL 18 com Docker)
-Se você preferir rodar o **PostgreSQL 18** localmente em vez de usar o Neon para o ambiente de desenvolvimento, utilize o Docker Compose:
+#### Run the Database Locally (PostgreSQL 18 via Docker)
+If you prefer running a local **PostgreSQL 18** instance instead of Neon for development:
 
-1. Suba o container do banco:
+1. Start the database container:
    ```bash
    cd infra/docker
    docker compose up -d db
    ```
-2. Defina a variável de ambiente criando um arquivo `services/api/.env` com a URL do banco local:
+2. Define the local connection URL in `services/api/.env`:
    ```env
    DATABASE_URL="postgres://postgres:local_postgres_password@localhost:5432/api_development"
    ```
 
-#### Executar Migrations e Iniciar Servidor Rails
-A partir da raiz do monorepo:
+#### Run Migrations and Start Rails Server
+From the root of the workspace:
 ```bash
-# Executa migrações do banco
+# Setup database schemas and run migrations
 pnpm --filter @navi/api db:setup
 
-# Inicia o servidor local da API (porta 3000)
+# Start local Rails API server (port 3000)
 pnpm dev:api
 ```
-A API estará rodando em `http://localhost:3000`.
+The API will run on `http://localhost:3000`.
 
 ---
 
-### 4. Executar o Dashboard Web (Vite)
+### 4. Run the Web Dashboard (Vite)
 
-Para iniciar a interface web do dashboard administrativo:
+To run the administrative web dashboard locally:
 ```bash
 pnpm dev:web
 ```
-O dashboard estará disponível em `http://localhost:5173`.
+The dashboard will be available on `http://localhost:5173`.
 
 ---
 
-## 📈 Status Inicial do Projeto
+## 📈 Initial Project Status
 
-* [x] Estrutura monorepo inicializada com `pnpm workspaces`.
-* [x] Aplicativo mobile Expo configurado com TypeScript e suporte a dependências locais.
-* [x] Dashboard web Vite + React criado e configurado com TypeScript.
-* [x] API inicial em Ruby on Rails 8.1 gerada no formato `--api` com PostgreSQL.
-* [x] Pacote compartilhado `@navi/types` criado com os modelos de domínio do Navi.
-* [x] Pacote compartilhado `@navi/shared` criado com utilitários iniciais de formatação e cálculo de streaks.
-* [x] Configuração de Docker Compose local criada para banco de dados PostgreSQL.
-* [x] Documentação de implantação no GCP e de arquitetura do sistema documentada.
+* [x] Monorepo structure initialized with `pnpm workspaces`.
+* [x] Mobile Expo app configured with TypeScript and workspace linkings.
+* [x] Web Vite dashboard scaffolded with React and workspace linkings.
+* [x] Ruby on Rails 8.1 API backend generated with PostgreSQL support.
+* [x] Shared package `@navi/types` created with core domain interfaces.
+* [x] Shared package `@navi/shared` created with formatting and streak utility functions.
+* [x] Local Docker Compose setup created for PostgreSQL 18.
+* [x] GCP deployment docs and system architecture diagrams documented.
