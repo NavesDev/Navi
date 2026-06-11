@@ -1,28 +1,28 @@
 # Docker Infrastructure - Navi
 
-Este diretório contém configurações para execução local simplificada utilizando Docker.
+This directory contains configurations for simplified local environment execution using Docker.
 
-## Estrutura
+## Structure
 
-* `docker-compose.yml`: Define os serviços de banco de dados PostgreSQL (`db`) e backend em Rails (`api`).
+* `docker-compose.yml`: Defines the PostgreSQL database (`db`) and Rails backend (`api`) services.
 
-## Como utilizar
+## How to Use
 
-Para subir o banco de dados PostgreSQL local rapidamente via Docker:
+To spin up only the local PostgreSQL database instance quickly:
 
 ```bash
-# Navegue para a pasta de infra/docker
+# Navigate to the infra/docker folder
 cd infra/docker
 
-# Inicie apenas o banco de dados em segundo plano (background)
-docker-compose up -d db
+# Start only the database service in the background
+docker compose up -d db
 ```
 
-Se desejar executar toda a stack Rails + PostgreSQL via Docker:
+If you prefer to run the entire backend stack (Rails API + PostgreSQL 18) via Docker:
 
 ```bash
-# Inicie todos os serviços
-docker-compose up --build
+# Start all services
+docker compose up --build
 ```
 
-O backend estará acessível em `http://localhost:3000`.
+The Rails backend API will be accessible at `http://localhost:3000`.
