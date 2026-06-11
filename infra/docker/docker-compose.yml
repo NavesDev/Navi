@@ -11,7 +11,7 @@ services:
       POSTGRES_PASSWORD: local_postgres_password
       POSTGRES_DB: api_development
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdata_v18:/var/lib/postgresql
     networks:
       - navi-network
 
@@ -35,7 +35,7 @@ services:
       - navi-network
 
 volumes:
-  pgdata:
+  pgdata_v18:
 
 networks:
   navi-network:
