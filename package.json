@@ -1,0 +1,23 @@
+{
+  "name": "navi-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Navi - Personal Assistant AI Monorepo",
+  "scripts": {
+    "dev:mobile": "pnpm --filter @navi/mobile start",
+    "dev:web": "pnpm --filter @navi/web dev",
+    "dev:api": "pnpm --filter @navi/api dev",
+    "build:web": "pnpm --filter @navi/web build",
+    "lint": "pnpm -r lint",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,yml,yaml}\"",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=11.0.0"
+  },
+  "devDependencies": {
+    "prettier": "^3.2.5",
+    "typescript": "^5.4.5"
+  }
+}

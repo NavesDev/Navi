@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:18-alpine
+    container_name: navi-db-local
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: local_postgres_password
+      POSTGRES_DB: api_development
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - navi-network
+
+  api:
+    build:
+      context: ../../
+      dockerfile: services/api/Dockerfile
+    container_name: navi-api-dev
+    command: bundle exec rails server -b 0.0.0.0 -p 3000
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../../services/api:/rails
+    environment:
+      RAILS_ENV: development
+      DATABASE_URL: postgres://postgres:local_postgres_password@db:5432/api_development
+      RAILS_MAX_THREADS: 5
+    depends_on:
+      - db
+    networks:
+      - navi-network
+
+volumes:
+  pgdata:
+
+networks:
+  navi-network:
+    driver: bridge

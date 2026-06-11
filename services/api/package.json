@@ -1,0 +1,11 @@
+{
+  "name": "@navi/api",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "bundle exec rails server -p 3000",
+    "db:setup": "bundle exec rails db:prepare",
+    "db:migrate": "bundle exec rails db:migrate",
+    "test": "bundle exec rails test"
+  }
+}

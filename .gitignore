@@ -1,0 +1,52 @@
+# Navi Monorepo .gitignore
+
+# Local development config and secrets
+.dev/
+.env
+.env*.local
+*.env
+
+# Dependency directories
+node_modules/
+/jspm_packages/
+/web_packages/
+
+# TypeScript/JavaScript Build outputs
+dist/
+build/
+out/
+.next/
+web-build/
+.expo/
+.metro/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Ruby on Rails API
+/services/api/log/*.log
+/services/api/tmp/
+/services/api/db/*.sqlite3
+/services/api/db/*.sqlite3-*
+/services/api/storage/
+/services/api/public/assets
+/services/api/config/master.key
+/services/api/config/credentials.yml.enc
+/services/api/.kamal/secrets
+
+# Docker & Container files
+.docker/
+docker-compose.override.yml
+
+# IDE / System files
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
+Thumbs.db
