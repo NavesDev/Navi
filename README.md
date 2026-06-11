@@ -1,5 +1,7 @@
 # Navi 🌌
 
+> 🌐 **Looking for the Portuguese version? / Quer ler em português?** Check out [docs/README.pt-br.md](./docs/README.pt-br.md).
+
 Navi is an AI-powered personal assistant app designed to help you manage your finances, goals, habits, projects, and productivity through natural language conversation. The platform also features a modern administrative web dashboard for structured data visualization.
 
 ---
