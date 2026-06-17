@@ -82,7 +82,7 @@ module Api
           if params["end_date"].present?
             expenses = expenses.where("date <= ?", params["end_date"])
           end
-          expenses.map { |e| { date: e.date, category: e.category, description: e.description, amount: e.amount.to_f } }
+          expenses.map { |e| { id: e.id, date: e.date, category: e.category, description: e.description, amount: e.amount.to_f } }
         when "search_budgets"
           budgets = current_user.budgets
           if params["start_date"].present?
@@ -94,6 +94,43 @@ module Api
             budgets = budgets.where("date <= ?", date)
           end
           budgets.map { |b| { date: b.date, amount: b.amount.to_f } }
+        when "create_expense"
+          expense = current_user.expenses.build(
+            date: params["date"],
+            category: params["category"],
+            description: params["description"],
+            amount: params["amount"].to_f
+          )
+          if expense.save
+            { status: "success", expense: { id: expense.id, date: expense.date, category: expense.category, description: expense.description, amount: expense.amount.to_f } }
+          else
+            { status: "error", errors: expense.errors.full_messages }
+          end
+        when "update_expense"
+          expense = current_user.expenses.find_by(id: params["id"])
+          if expense
+            update_params = {}
+            update_params[:date] = params["date"] if params["date"].present?
+            update_params[:category] = params["category"] if params["category"].present?
+            update_params[:description] = params["description"] if params["description"].present?
+            update_params[:amount] = params["amount"].to_f if params["amount"].present?
+            
+            if expense.update(update_params)
+              { status: "success", expense: { id: expense.id, date: expense.date, category: expense.category, description: expense.description, amount: expense.amount.to_f } }
+            else
+              { status: "error", errors: expense.errors.full_messages }
+            end
+          else
+            { status: "error", errors: ["Gasto não encontrado"] }
+          end
+        when "delete_expense"
+          expense = current_user.expenses.find_by(id: params["id"])
+          if expense
+            expense.destroy
+            { status: "success", message: "Gasto deletado com sucesso" }
+          else
+            { status: "error", errors: ["Gasto não encontrado"] }
+          end
         else
           []
         end
