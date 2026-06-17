@@ -12,16 +12,35 @@ import {
   KeyboardAvoidingView,
   ScrollView,
 } from 'react-native';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import * as SecureStore from 'expo-secure-store';
+import * as SplashScreen from 'expo-splash-screen';
+import Constants from 'expo-constants';
+import { useFonts, PlayfairDisplay_400Regular } from '@expo-google-fonts/playfair-display';
+import {
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+} from '@expo-google-fonts/inter';
 
-// Configure standard API base URL for Android emulator vs iOS/web
-const API_URL = Platform.OS === 'android' 
-  ? 'http://10.0.2.2:3000/api/v1' 
-  : 'http://localhost:3000/api/v1';
+// Prevent the splash screen from auto-hiding before asset/font loading is complete
+SplashScreen.preventAutoHideAsync();
+
+// Dynamic API URL detection based on Expo's hostUri (essential for physical devices on same Wi-Fi)
+const getApiUrl = () => {
+  const hostUri = Constants.expoConfig?.hostUri;
+  if (hostUri) {
+    const ip = hostUri.split(':').shift();
+    return `http://${ip}:3000/api/v1`;
+  }
+  return Platform.OS === 'android' ? 'http://10.0.2.2:3000/api/v1' : 'http://localhost:3000/api/v1';
+};
+
+const API_URL = getApiUrl();
 
 export default function App() {
   // Navigation & Authentication states
-  const [isLoading, setIsLoading] = useState(true);
+  const [isSessionRestoring, setIsSessionRestoring] = useState(true);
   const [userToken, setUserToken] = useState<string | null>(null);
   const [username, setUsername] = useState<string | null>(null);
   
@@ -32,13 +51,21 @@ export default function App() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [focusedField, setFocusedField] = useState<'username' | 'password' | null>(null);
 
-  // Authenticated state check
+  // Profile data test states
   const [profileData, setProfileData] = useState<any>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
 
-  // Load persisted session on app startup
+  // Load custom fonts using expo-font / @expo-google-fonts
+  const [fontsLoaded, fontError] = useFonts({
+    PlayfairDisplay_400Regular,
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+  });
+
+  // Restore session token on app startup
   useEffect(() => {
-    async function bootstrapAsync() {
+    async function restoreSession() {
       try {
         const token = await SecureStore.getItemAsync('user_session_token');
         const savedUsername = await SecureStore.getItemAsync('user_username');
@@ -49,16 +76,23 @@ export default function App() {
       } catch (e) {
         console.error('Failed to restore session token', e);
       } finally {
-        setIsLoading(false);
+        setIsSessionRestoring(false);
       }
     }
-    bootstrapAsync();
+    restoreSession();
   }, []);
+
+  // Hide the splash screen once fonts are loaded and session restore check completes
+  useEffect(() => {
+    if ((fontsLoaded || fontError) && !isSessionRestoring) {
+      SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded, fontError, isSessionRestoring]);
 
   // Handle Login or Registration submission
   const handleAuth = async () => {
     if (!inputUsername.trim() || !inputPassword) {
-      Alert.alert('Erro', 'Por favor, preencha todos os campos.');
+      Alert.alert('Erro', 'Por favor, preencha todos os campos obrigatórios.');
       return;
     }
 
@@ -81,32 +115,31 @@ export default function App() {
 
       if (response.status === 429) {
         const retryAfter = data.retry_after || 60;
-        Alert.alert('Limite Excedido', `Muitas tentativas. Tente novamente em ${retryAfter} segundos.`);
+        Alert.alert('Limite de Acesso Excedido', `Muitas tentativas. Tente novamente em ${retryAfter} segundos.`);
         setIsSubmitting(false);
         return;
       }
 
       if (!response.ok) {
-        Alert.alert('Erro', data.error || 'Ocorreu um erro. Tente novamente.');
+        Alert.alert('Erro de Autenticação', data.error || 'Credenciais inválidas ou dados incorretos.');
         setIsSubmitting(false);
         return;
       }
 
-      // Persist session tokens
+      // Persist user token and metadata securely
       await SecureStore.setItemAsync('user_session_token', data.token);
       await SecureStore.setItemAsync('user_username', data.user.username);
 
-      // Update local state
       setUserToken(data.token);
       setUsername(data.user.username);
       
-      // Clear form inputs
+      // Clear credentials form
       setInputUsername('');
       setInputPassword('');
       setProfileData(null);
     } catch (error) {
       console.error(error);
-      Alert.alert('Erro de Conexão', 'Não foi possível conectar ao servidor da API.');
+      Alert.alert('Erro de Conexão', 'Não foi possível estabelecer contato com o servidor da API.');
     } finally {
       setIsSubmitting(false);
     }
@@ -121,11 +154,11 @@ export default function App() {
       setUsername(null);
       setProfileData(null);
     } catch (e) {
-      console.error('Failed to clear session', e);
+      console.error('Failed to clear session token', e);
     }
   };
 
-  // Test authenticated /me endpoint
+  // Test authenticated profile query
   const checkProfile = async () => {
     if (!userToken) return;
     setIsLoadingProfile(true);
@@ -151,150 +184,148 @@ export default function App() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#D4C5B9" />
-      </View>
-    );
+  // Render loading screen if fonts or initial session restore is not ready
+  if (!fontsLoaded && !fontError) {
+    return null;
   }
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
-    >
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        {userToken ? (
-          // Logged In Dashboard View
-          <View style={styles.card}>
-            <Text style={styles.headline}>Navi 🌌</Text>
-            <Text style={styles.welcomeText}>Bem-vindo, {username}!</Text>
-            
-            <View style={styles.divider} />
-            
-            <Text style={styles.label}>Sessão Ativa</Text>
-            <Text style={styles.tokenText} numberOfLines={2} ellipsizeMode="tail">
-              {userToken}
-            </Text>
-
-            {profileData && (
-              <View style={styles.profileContainer}>
-                <Text style={styles.label}>Resposta de /auth/me:</Text>
-                <Text style={styles.profileDataText}>
-                  ID: {profileData.id} | Usuário: {profileData.username}
+    <SafeAreaProvider>
+      <SafeAreaView style={styles.container}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboardView}
+        >
+          <ScrollView contentContainerStyle={styles.scrollContainer}>
+            {userToken ? (
+              // Logged In Dashboard View (Quiet Luxury layout)
+              <View style={styles.card}>
+                <Text style={styles.headline}>Navi 🌌</Text>
+                <Text style={styles.welcomeText}>Bem-vindo, {username}!</Text>
+                
+                <View style={styles.divider} />
+                
+                <Text style={styles.label}>Sessão Ativa</Text>
+                <Text style={styles.tokenText} numberOfLines={2} ellipsizeMode="tail">
+                  {userToken}
                 </Text>
+
+                {profileData && (
+                  <View style={styles.profileContainer}>
+                    <Text style={styles.label}>Resposta de /auth/me:</Text>
+                    <Text style={styles.profileDataText}>
+                      ID: {profileData.id} | Usuário: {profileData.username}
+                    </Text>
+                  </View>
+                )}
+
+                <View style={styles.buttonSpacing} />
+
+                <TouchableOpacity 
+                  style={styles.primaryButton}
+                  onPress={checkProfile}
+                  disabled={isLoadingProfile}
+                >
+                  {isLoadingProfile ? (
+                    <ActivityIndicator size="small" color="#0A0A0A" />
+                  ) : (
+                    <Text style={styles.primaryButtonText}>VERIFICAR PERFIL (/me)</Text>
+                  )}
+                </TouchableOpacity>
+
+                <TouchableOpacity 
+                  style={styles.secondaryButton}
+                  onPress={handleLogout}
+                >
+                  <Text style={styles.secondaryButtonText}>SAIR DA CONTA</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              // Login / Registration Form View
+              <View style={styles.card}>
+                <Text style={styles.headline}>Navi 🌌</Text>
+                <Text style={styles.subheadline}>
+                  {authMode === 'login' ? 'Acesse sua conta' : 'Crie sua conta'}
+                </Text>
+
+                <View style={styles.inputContainer}>
+                  <Text style={styles.label}>NOME DE USUÁRIO</Text>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      focusedField === 'username' && styles.inputFocused
+                    ]}
+                    placeholder="Insira seu usuário"
+                    placeholderTextColor="#454747"
+                    value={inputUsername}
+                    onChangeText={setInputUsername}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    onFocus={() => setFocusedField('username')}
+                    onBlur={() => setFocusedField(null)}
+                  />
+                </View>
+
+                <View style={styles.inputContainer}>
+                  <Text style={styles.label}>SENHA</Text>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      focusedField === 'password' && styles.inputFocused
+                    ]}
+                    placeholder="Insira sua senha"
+                    placeholderTextColor="#454747"
+                    secureTextEntry
+                    value={inputPassword}
+                    onChangeText={setInputPassword}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    onFocus={() => setFocusedField('password')}
+                    onBlur={() => setFocusedField(null)}
+                  />
+                </View>
+
+                <TouchableOpacity 
+                  style={styles.primaryButton}
+                  onPress={handleAuth}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <ActivityIndicator size="small" color="#0A0A0A" />
+                  ) : (
+                    <Text style={styles.primaryButtonText}>
+                      {authMode === 'login' ? 'ENTRAR' : 'CADASTRAR'}
+                    </Text>
+                  )}
+                </TouchableOpacity>
+
+                <TouchableOpacity 
+                  style={styles.secondaryButton}
+                  onPress={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
+                >
+                  <Text style={styles.secondaryButtonText}>
+                    {authMode === 'login' 
+                      ? 'NÃO POSSUI CONTA? CADASTRE-SE' 
+                      : 'JÁ POSSUI CONTA? FAÇA LOGIN'}
+                  </Text>
+                </TouchableOpacity>
               </View>
             )}
-
-            <View style={styles.buttonSpacing} />
-
-            <TouchableOpacity 
-              style={styles.primaryButton}
-              onPress={checkProfile}
-              disabled={isLoadingProfile}
-            >
-              {isLoadingProfile ? (
-                <ActivityIndicator size="small" color="#0A0A0A" />
-              ) : (
-                <Text style={styles.primaryButtonText}>VERIFICAR PERFIL (/me)</Text>
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={styles.secondaryButton}
-              onPress={handleLogout}
-            >
-              <Text style={styles.secondaryButtonText}>SAIR DA CONTA</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          // Login / Registration Form View
-          <View style={styles.card}>
-            <Text style={styles.headline}>Navi 🌌</Text>
-            <Text style={styles.subheadline}>
-              {authMode === 'login' ? 'Acesse sua conta' : 'Crie sua conta'}
-            </Text>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>NOME DE USUÁRIO</Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  focusedField === 'username' && styles.inputFocused
-                ]}
-                placeholder="Insira seu usuário"
-                placeholderTextColor="#454747"
-                value={inputUsername}
-                onChangeText={setInputUsername}
-                autoCapitalize="none"
-                autoCorrect={false}
-                onFocus={() => setFocusedField('username')}
-                onBlur={() => setFocusedField(null)}
-              />
-            </View>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>SENHA</Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  focusedField === 'password' && styles.inputFocused
-                ]}
-                placeholder="Insira sua senha"
-                placeholderTextColor="#454747"
-                secureTextEntry
-                value={inputPassword}
-                onChangeText={setInputPassword}
-                autoCapitalize="none"
-                autoCorrect={false}
-                onFocus={() => setFocusedField('password')}
-                onBlur={() => setFocusedField(null)}
-              />
-            </View>
-
-            <TouchableOpacity 
-              style={styles.primaryButton}
-              onPress={handleAuth}
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <ActivityIndicator size="small" color="#0A0A0A" />
-              ) : (
-                <Text style={styles.primaryButtonText}>
-                  {authMode === 'login' ? 'ENTRAR' : 'CADASTRAR'}
-                </Text>
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={styles.secondaryButton}
-              onPress={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
-            >
-              <Text style={styles.secondaryButtonText}>
-                {authMode === 'login' 
-                  ? 'NÃO POSSUI CONTA? CADASTRE-SE' 
-                  : 'JÁ POSSUI CONTA? FAÇA LOGIN'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </ScrollView>
-      <StatusBar style="light" />
-    </KeyboardAvoidingView>
+          </ScrollView>
+          <StatusBar style="light" />
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    backgroundColor: '#0A0A0A',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   container: {
     flex: 1,
     backgroundColor: '#0A0A0A',
+  },
+  keyboardView: {
+    flex: 1,
   },
   scrollContainer: {
     flexGrow: 1,
@@ -310,15 +341,15 @@ const styles = StyleSheet.create({
     elevation: 0,
   },
   headline: {
-    fontFamily: Platform.OS === 'ios' ? 'Playfair Display' : 'serif',
+    fontFamily: 'PlayfairDisplay_400Regular',
     fontSize: 32,
     color: '#D4C5B9',
     textAlign: 'center',
     marginBottom: 8,
   },
   subheadline: {
-    fontFamily: 'System',
-    fontSize: 14,
+    fontFamily: 'Inter_500Medium',
+    fontSize: 12,
     color: '#C6C6C6',
     textAlign: 'center',
     letterSpacing: 1.5,
@@ -326,6 +357,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   welcomeText: {
+    fontFamily: 'Inter_400Regular',
     fontSize: 18,
     color: '#E5E2E1',
     textAlign: 'center',
@@ -340,14 +372,14 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   label: {
-    fontFamily: 'System',
+    fontFamily: 'Inter_600SemiBold',
     fontSize: 11,
-    fontWeight: '600',
     color: '#C6C6C6',
     letterSpacing: 1.5,
     marginBottom: 8,
   },
   input: {
+    fontFamily: 'Inter_400Regular',
     height: 44,
     borderBottomWidth: 1,
     borderBottomColor: '#2A2A2A',
@@ -367,9 +399,9 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   primaryButtonText: {
+    fontFamily: 'Inter_600SemiBold',
     color: '#0A0A0A',
     fontSize: 13,
-    fontWeight: '700',
     letterSpacing: 1.5,
   },
   secondaryButton: {
@@ -382,9 +414,9 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   secondaryButtonText: {
+    fontFamily: 'Inter_500Medium',
     color: '#C6C6C6',
     fontSize: 11,
-    fontWeight: '600',
     letterSpacing: 1,
   },
   tokenText: {
@@ -407,6 +439,7 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   profileDataText: {
+    fontFamily: 'Inter_400Regular',
     fontSize: 14,
     color: '#D4C5B9',
     marginTop: 4,
