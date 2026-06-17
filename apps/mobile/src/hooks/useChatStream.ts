@@ -130,7 +130,20 @@ export function useChatStream(token: string) {
     };
 
     const currentDate = new Date().toISOString();
-    xhr.send(JSON.stringify({ message: userMsg.text, current_date: currentDate }));
+    const history = messages
+      .filter((m) => m.isCompleted && !m.isSearching && m.text)
+      .map((m) => ({
+        role: m.sender === 'user' ? 'user' : 'assistant',
+        content: m.text,
+      }));
+
+    xhr.send(
+      JSON.stringify({
+        message: userMsg.text,
+        current_date: currentDate,
+        history,
+      })
+    );
   };
 
   return {

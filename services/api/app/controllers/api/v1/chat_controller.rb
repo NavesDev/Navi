@@ -24,9 +24,16 @@ module Api
         system_instruction = File.read(Rails.root.join("config", "prompts", "chat_system_instruction.md"))
 
         messages = [
-          { role: "system", content: system_instruction },
-          { role: "user", content: user_content }
+          { role: "system", content: system_instruction }
         ]
+
+        if params[:history].present? && params[:history].is_a?(Array)
+          params[:history].last(10).each do |msg|
+            messages << { role: msg["role"], content: msg["content"] } if msg["role"].present? && msg["content"].present?
+          end
+        end
+
+        messages << { role: "user", content: user_content }
 
         response_1 = openai.chat(messages)
 
