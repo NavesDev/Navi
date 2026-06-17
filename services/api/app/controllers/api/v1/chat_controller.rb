@@ -15,6 +15,9 @@ module Api
           return
         end
 
+        current_date = params[:current_date]
+        user_content = current_date.present? ? "Contexto - Data e hora atual do usuário: #{current_date}\n\nMensagem: #{user_message}" : user_message
+
         openai = OpenaiService.new
         session_id = "chat_sess_#{SecureRandom.hex(6)}"
 
@@ -22,7 +25,7 @@ module Api
 
         messages = [
           { role: "system", content: system_instruction },
-          { role: "user", content: user_message }
+          { role: "user", content: user_content }
         ]
 
         response_1 = openai.chat(messages)

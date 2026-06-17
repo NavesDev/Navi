@@ -129,7 +129,8 @@ export function useChatStream(token: string) {
       setIsStreaming(false);
     };
 
-    xhr.send(JSON.stringify({ message: userMsg.text }));
+    const currentDate = new Date().toISOString();
+    xhr.send(JSON.stringify({ message: userMsg.text, current_date: currentDate }));
   };
 
   return {

@@ -89,10 +89,18 @@ export default function App() {
         {userToken && username ? (
           <View style={styles.tabContentContainer}>
             <View style={styles.tabView}>
-              {activeTab === 'chat' && <Chat token={userToken} />}
-              {activeTab === 'finances' && <Finances token={userToken} />}
-              {activeTab === 'routines' && <Routines token={userToken} />}
-              {activeTab === 'settings' && <Settings token={userToken} onLogout={handleLogout} />}
+              <View style={{ flex: 1, display: activeTab === 'chat' ? 'flex' : 'none' }}>
+                <Chat token={userToken} />
+              </View>
+              <View style={{ flex: 1, display: activeTab === 'finances' ? 'flex' : 'none' }}>
+                <Finances token={userToken} />
+              </View>
+              <View style={{ flex: 1, display: activeTab === 'routines' ? 'flex' : 'none' }}>
+                <Routines token={userToken} />
+              </View>
+              <View style={{ flex: 1, display: activeTab === 'settings' ? 'flex' : 'none' }}>
+                <Settings token={userToken} onLogout={handleLogout} />
+              </View>
             </View>
             <BottomTabBar activeTab={activeTab} onTabPress={setActiveTab} />
           </View>
