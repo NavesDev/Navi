@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { Config } from '../config';
 
@@ -56,20 +57,38 @@ export const authService = {
   },
 
   async saveSession(token: string, username: string) {
-    await SecureStore.setItemAsync('user_session_token', token);
-    await SecureStore.setItemAsync('user_username', username);
+    if (Platform.OS === 'web') {
+      localStorage.setItem('user_session_token', token);
+      localStorage.setItem('user_username', username);
+    } else {
+      await SecureStore.setItemAsync('user_session_token', token);
+      await SecureStore.setItemAsync('user_username', username);
+    }
   },
 
   async clearSession() {
-    await SecureStore.deleteItemAsync('user_session_token');
-    await SecureStore.deleteItemAsync('user_username');
+    if (Platform.OS === 'web') {
+      localStorage.removeItem('user_session_token');
+      localStorage.removeItem('user_username');
+    } else {
+      await SecureStore.deleteItemAsync('user_session_token');
+      await SecureStore.deleteItemAsync('user_username');
+    }
   },
 
   async getSession() {
-    const token = await SecureStore.getItemAsync('user_session_token');
-    const username = await SecureStore.getItemAsync('user_username');
-    if (token && username) {
-      return { token, username };
+    if (Platform.OS === 'web') {
+      const token = localStorage.getItem('user_session_token');
+      const username = localStorage.getItem('user_username');
+      if (token && username) {
+        return { token, username };
+      }
+    } else {
+      const token = await SecureStore.getItemAsync('user_session_token');
+      const username = await SecureStore.getItemAsync('user_username');
+      if (token && username) {
+        return { token, username };
+      }
     }
     return null;
   }
