@@ -10,6 +10,7 @@ Rails.application.routes.draw do
 
       resources :expenses
       resources :budgets
+      post "chat", to: "chat#create"
     end
   end
 end
