@@ -1,0 +1,11 @@
+one:
+  name: Alimentação
+  slug: alimentacao
+  icon: fastfood
+  user: one
+
+two:
+  name: Transporte
+  slug: transporte
+  icon: directions-car
+  user: two

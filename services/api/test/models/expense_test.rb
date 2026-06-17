@@ -3,13 +3,14 @@ require "test_helper"
 class ExpenseTest < ActiveSupport::TestCase
   setup do
     @user = users(:one)
+    @category = categories(:one)
   end
 
   test "should be valid when all parameters are provided correctly" do
     # Arrange
     expense = Expense.new(
       date: "2026-06-16",
-      category: "Alimentação",
+      category: @category,
       description: "Supermercado",
       amount: 150.50,
       user: @user
@@ -25,7 +26,7 @@ class ExpenseTest < ActiveSupport::TestCase
   test "should be invalid when date is missing" do
     # Arrange
     expense = Expense.new(
-      category: "Alimentação",
+      category: @category,
       amount: 150.50,
       user: @user
     )
@@ -51,14 +52,14 @@ class ExpenseTest < ActiveSupport::TestCase
 
     # Assert
     assert_not is_valid
-    assert_includes expense.errors[:category], "can't be blank"
+    assert_includes expense.errors[:category_id], "can't be blank"
   end
 
   test "should be invalid when amount is missing" do
     # Arrange
     expense = Expense.new(
       date: "2026-06-16",
-      category: "Alimentação",
+      category: @category,
       user: @user
     )
 
@@ -74,13 +75,13 @@ class ExpenseTest < ActiveSupport::TestCase
     # Arrange
     expense_zero = Expense.new(
       date: "2026-06-16",
-      category: "Alimentação",
+      category: @category,
       amount: 0,
       user: @user
     )
     expense_negative = Expense.new(
       date: "2026-06-16",
-      category: "Alimentação",
+      category: @category,
       amount: -10,
       user: @user
     )
@@ -101,7 +102,7 @@ class ExpenseTest < ActiveSupport::TestCase
     # Arrange
     expense = Expense.new(
       date: "2026-06-16",
-      category: "Alimentação",
+      category: @category,
       amount: 150.50
     )
 

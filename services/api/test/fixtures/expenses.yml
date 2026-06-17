@@ -2,14 +2,14 @@
 
 one:
   date: 2026-06-16
-  category: MyString
+  category: one
   description: MyString
   amount: 9.99
   user: one
 
 two:
   date: 2026-06-16
-  category: MyString
+  category: two
   description: MyString
   amount: 9.99
   user: two
