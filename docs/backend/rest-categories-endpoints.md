@@ -21,6 +21,7 @@ Retorna todas as categorias de gasto pertencentes ao usuário autenticado.
   {
     "id": 1,
     "name": "Alimentação",
+    "slug": "alimentacao",
     "icon": "fastfood",
     "created_at": "2026-06-17T01:30:00.000Z",
     "updated_at": "2026-06-17T01:30:00.000Z"
@@ -28,6 +29,7 @@ Retorna todas as categorias de gasto pertencentes ao usuário autenticado.
   {
     "id": 2,
     "name": "Transporte",
+    "slug": "transporte",
     "icon": "directions-car",
     "created_at": "2026-06-17T01:32:00.000Z",
     "updated_at": "2026-06-17T01:32:00.000Z"
@@ -52,6 +54,7 @@ Registra uma nova categoria customizada para o usuário autenticado.
 
 ### Regras de Validação:
 * `name`: Obrigatório. String não vazia. Única por usuário.
+* `slug`: Gerado automaticamente a partir de `name` se não enviado, ou validado para ter apenas caracteres alfanuméricos e hífens. Único por usuário.
 * `icon`: Obrigatório. Slug identificando o ícone do Material Icons (ex: "local-bar", "flight", "shopping-cart").
 
 ### Exemplo de Resposta de Sucesso (201 Created)
@@ -59,6 +62,7 @@ Registra uma nova categoria customizada para o usuário autenticado.
 {
   "id": 3,
   "name": "Lazer",
+  "slug": "lazer",
   "icon": "movie",
   "created_at": "2026-06-17T01:45:00.000Z",
   "updated_at": "2026-06-17T01:45:00.000Z"
@@ -78,6 +82,7 @@ Busca detalhes de uma categoria específica.
 {
   "id": 1,
   "name": "Alimentação",
+  "slug": "alimentacao",
   "icon": "fastfood"
 }
 ```
@@ -88,7 +93,7 @@ Busca detalhes de uma categoria específica.
 ---
 
 ## 4. Atualizar Categoria (Update)
-Modifica o nome ou o ícone da categoria do usuário.
+Modifica o nome, slug ou o ícone da categoria do usuário.
 
 * **Método:** `PUT` ou `PATCH`
 * **Rota:** `/api/v1/categories/:id`
@@ -96,6 +101,7 @@ Modifica o nome ou o ícone da categoria do usuário.
 ```json
 {
   "name": "Supermercado & Restaurantes",
+  "slug": "supermercado-e-restaurantes",
   "icon": "restaurant"
 }
 ```
@@ -105,6 +111,7 @@ Modifica o nome ou o ícone da categoria do usuário.
 {
   "id": 1,
   "name": "Supermercado & Restaurantes",
+  "slug": "supermercado-e-restaurantes",
   "icon": "restaurant",
   "created_at": "2026-06-17T01:30:00.000Z",
   "updated_at": "2026-06-17T01:50:00.000Z"
