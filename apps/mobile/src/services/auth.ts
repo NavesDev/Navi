@@ -1,17 +1,8 @@
-import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
-import Constants from 'expo-constants';
+import { Config } from '../config';
 
-const getApiUrl = () => {
-  const hostUri = Constants.expoConfig?.hostUri;
-  if (hostUri) {
-    const ip = hostUri.split(':').shift();
-    return `http://${ip}:3000/api/v1`;
-  }
-  return Platform.OS === 'android' ? 'http://10.0.2.2:3000/api/v1' : 'http://localhost:3000/api/v1';
-};
+export const API_URL = Config.API_URL;
 
-export const API_URL = getApiUrl();
 
 export interface AuthResponse {
   user: {
