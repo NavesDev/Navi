@@ -36,26 +36,9 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
 
       await authService.saveSession(data.token, data.user.username);
       
-      if (authMode === 'register') {
-        Alert.alert(
-          'Conta Criada',
-          'Seu cadastro foi realizado com sucesso! Bem-vindo ao Navi.',
-          [
-            {
-              text: 'Acessar App',
-              onPress: () => {
-                onSuccess(data.token, data.user.username);
-                setUsername('');
-                setPassword('');
-              }
-            }
-          ]
-        );
-      } else {
-        onSuccess(data.token, data.user.username);
-        setUsername('');
-        setPassword('');
-      }
+      onSuccess(data.token, data.user.username);
+      setUsername('');
+      setPassword('');
     } catch (error: any) {
       if (error.message === 'RateLimitExceeded' || error.retryAfter) {
         Alert.alert(
