@@ -33,18 +33,22 @@ class OpenaiService
             properties: {
               action: {
                 type: "string",
-                description: "Qual ação de busca executar no banco de dados. Valores suportados: 'search_expenses', 'search_budgets', ou string vazia '' caso não precise de busca ou já tenha os dados para responder."
+                description: "Qual ação executar no banco de dados. Valores suportados: 'search_expenses', 'search_budgets', 'create_expense', 'update_expense', 'delete_expense', ou string vazia '' caso não precise de busca ou já tenha executado."
               },
               params: {
                 type: "object",
                 properties: {
                   category: { type: "string", description: "Categoria de gastos (ou string vazia)" },
                   start_date: { type: "string", description: "Data inicial no formato YYYY-MM-DD (ou string vazia)" },
-                  end_date: { type: "string", description: "Data final no formato YYYY-MM-DD (ou string vazia)" }
+                  end_date: { type: "string", description: "Data final no formato YYYY-MM-DD (ou string vazia)" },
+                  date: { type: "string", description: "Data do gasto no formato YYYY-MM-DD (ou string vazia)" },
+                  description: { type: "string", description: "Descrição do gasto (ou string vazia)" },
+                  amount: { type: "string", description: "Valor do gasto, ex: 150.50 (ou string vazia)" },
+                  id: { type: "string", description: "ID do gasto para edição/deleção (ou string vazia)" }
                 },
-                required: ["category", "start_date", "end_date"],
+                required: ["category", "start_date", "end_date", "date", "description", "amount", "id"],
                 additionalProperties: false,
-                description: "Parâmetros para a ação de busca."
+                description: "Parâmetros para a ação."
               },
               placeholder: {
                 type: "object",
@@ -89,7 +93,7 @@ class OpenaiService
   def mock_response_for_missing_key
     {
       "action" => "",
-      "params" => { "category" => "", "start_date" => "", "end_date" => "" },
+      "params" => { "category" => "", "start_date" => "", "end_date" => "", "date" => "", "description" => "", "amount" => "", "id" => "" },
       "placeholder" => { "type" => "", "icon" => "", "text" => "" },
       "message" => "[Mock] Configurar a variável OPENAI_API_KEY no arquivo .env para respostas reais da IA."
     }
