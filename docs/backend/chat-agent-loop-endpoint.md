@@ -1,6 +1,10 @@
-# API REST - Endpoint de Chat & Loop do Agente (Chat Agent Loop)
+# API REST - Endpoint de Chat & Loop do Agente via Streaming (Chat Streaming)
 
-Este endpoint gerencia a interação por chat entre o usuário e o Agente da Navi. O fluxo utiliza uma arquitetura de **Client-Side Tool Execution** (Execução de Ações no Cliente) em múltiplas etapas, onde o agente retorna ações (Actions) para o aplicativo executar localmente e retornar o contexto para que o agente continue o raciocínio.
+Este endpoint gerencia a interação por chat entre o usuário e o Agente da Navi. O fluxo utiliza uma conexão de **Streaming de Eventos (Server-Sent Events - SSE)** de etapa única ou dupla no mesmo canal HTTP. O próprio backend processa as buscas no banco de dados e envia os status e respostas de forma sequencial pela conexão ativa.
+
+Para evitar loops infinitos de agentes e desperdício de tokens, existe um **limite estrito de no máximo 2 eventos enviados pelo servidor por conexão/pergunta**:
+1. **Mensagem de Ação/Carregamento** (se aplicável): Contém o estado de busca/processamento com um placeholder estruturado para o front-end exibir um feedback visual imediato.
+2. **Mensagem de Resposta Final**: Contém a conclusão legível e formatada para o usuário após a conclusão da consulta.
 
 ---
 
@@ -21,28 +25,26 @@ Este endpoint gerencia a interação por chat entre o usuário e o Agente da Nav
 ```mermaid
 sequenceDiagram
     participant App as App Mobile (Front)
-    participant API as API Gateway/Chat (Backend)
-    participant LLM as LLM/Agente (Navi Engine)
+    participant API as API/Chat (Backend)
+    participant DB as Banco de Dados (Rails/Postgres)
 
-    App->>API: 1. POST /chat {"message": "Quanto gastei com mercado este mês?"}
-    API->>LLM: Envia histórico + mensagem
-    LLM->>API: Decide buscar gastos (Tool Call)
-    API->>App: 2. Retorna JSON com placeholder + Action de busca
-    Note over App: App renderiza o placeholder (ex: spinner + ícone)
-    App->>API: 3. Executa GET /expenses?category=Alimentação localmente
-    API-->>App: Retorna lista de gastos
-    App->>API: 4. POST /chat com resultado da busca + session_id
-    API->>LLM: Envia resultado dos dados encontrados
-    LLM->>API: Gera resposta interpretando os gastos
-    API->>App: 5. Retorna resposta final legível para o usuário
+    App->>API: 1. POST /chat {"message": "Quanto gastei com mercado este mês?"} (Mantém conexão aberta)
+    Note over API: Backend inicia o processamento com o LLM
+    API->>App: 2. Evento 1: "status": "searching" + placeholder (Spinner + ícone)
+    Note over API: Backend executa a query de busca internamente no DB
+    API->>DB: Busca gastos do usuário do mês corrente
+    DB-->>API: Retorna os gastos
+    Note over API: Backend consolida dados e LLM escreve resposta
+    API->>App: 3. Evento 2: "status": "completed" + Mensagem final
+    Note over App: Conexão é fechada pelo servidor
 ```
 
 ---
 
 ## 2. Estrutura de Payload e Eventos
 
-### Passo A: Início da Conversa (Envio do Usuário)
-O usuário faz a pergunta inicial.
+### Passo A: Requisição Inicial do Usuário
+O usuário faz a pergunta inicial. O app mantém a conexão HTTP aberta ouvindo os eventos do stream.
 
 **Payload:**
 ```json
@@ -51,103 +53,54 @@ O usuário faz a pergunta inicial.
 }
 ```
 
-### Passo B: Resposta Intermediária da API (Action & Placeholder)
-O agente percebe que precisa de dados para responder e emite uma resposta intermediária de processamento.
+---
 
-**Event Stream / JSON Response (200 OK):**
+### Passo B: Evento 1 - Busca/Processamento (Opcional - Máx. 1 por stream)
+Enviado imediatamente quando o backend identifica que precisa realizar uma consulta para responder. Contém a informação estruturada para o front-end saber o que está acontecendo e mostrar o placeholder correto.
+
+**SSE Chunk (Event: `message`):**
 ```json
 {
   "session_id": "chat_sess_9a8f27b",
-  "status": "processing",
-  "message": "Entendido. Vou verificar isso para você agora.",
+  "status": "searching",
+  "message": "Buscando gastos da categoria Alimentação...",
   "placeholder": {
     "type": "searching_expenses",
     "icon": "fastfood",
-    "text": "Buscando gastos de Alimentação",
     "params": {
       "category": "Alimentação",
       "start_date": "2026-06-01",
       "end_date": "2026-06-30"
     }
-  },
-  "actions": [
-    {
-      "id": "action_req_01",
-      "type": "search_expenses",
-      "params": {
-        "category": "Alimentação",
-        "start_date": "2026-06-01",
-        "end_date": "2026-06-30"
-      }
-    }
-  ]
+  }
 }
 ```
 
 #### Regras do Placeholder para o Front-End:
-* O front-end intercepta o objeto `placeholder` para exibir um feedback visual de progresso dinâmico (ex: `🔍 [Ícone fastfood] Buscando gastos de Alimentação...`).
-* O `icon` é sempre um slug compatível com **Material Icons** do Expo.
+* O front-end intercepta o objeto `placeholder` e exibe um estado de carregamento amigável para o usuário.
+* O `icon` é um slug compatível com **Material Icons** do Expo (ex: `fastfood` para alimentação, `directions-car` para transporte, etc.), permitindo que o aplicativo estilize com cores e ícones correspondentes em tempo real.
+* Exemplos de placeholders recomendados:
+  * Buscando gastos da categoria `[icone] x`: `{ "type": "searching_expenses", "icon": "fastfood", "params": { "category": "x" } }`
+  * Buscando gastos de data `x` até data `y`: `{ "type": "searching_expenses", "icon": "date-range", "params": { "start_date": "x", "end_date": "y" } }`
 
 ---
 
-### Passo C: Envio dos Resultados do Cliente (Retorno ao Agente)
-O aplicativo executa as ações listadas no array `actions` chamando as APIs locais do backend (ex: `GET /api/v1/expenses`) e submete os resultados de volta para o chat, referenciando o `session_id`.
+### Passo C: Evento 2 - Resposta Final (Obrigatório - Máx. 1 por stream)
+Enviado após o backend processar os dados obtidos das consultas internas e gerar a conclusão textual. Após este evento, a conexão é encerrada.
 
-**Payload:**
-```json
-{
-  "session_id": "chat_sess_9a8f27b",
-  "action_results": [
-    {
-      "action_id": "action_req_01",
-      "status": "success",
-      "data": [
-        { "date": "2026-06-05", "category": "Alimentação", "description": "Supermercado A", "amount": "150.00" },
-        { "date": "2026-06-12", "category": "Alimentação", "description": "Lanche B", "amount": "45.50" }
-      ]
-    }
-  ]
-}
-```
-
----
-
-### Passo D: Resposta Final do Agente
-O agente recebe o contexto dos dados coletados, calcula o total e retorna a mensagem conclusiva para o usuário.
-
-**Event Stream / JSON Response (200 OK):**
+**SSE Chunk (Event: `message`):**
 ```json
 {
   "session_id": "chat_sess_9a8f27b",
   "status": "completed",
-  "message": "Você gastou um total de R$ 195,50 com alimentação (mercado) este mês até agora.",
-  "actions": []
+  "message": "Você gastou um total de R$ 195,50 com alimentação (mercado) este mês até agora."
 }
 ```
 
 ---
 
-## 3. Tipos de Ações Suportadas (`actions`)
+## 3. Diretrizes de Segurança e Prevenção de Loops Infinitos (Regras do Agente)
 
-O array `actions` suporta os seguintes tipos de operações para que o cliente execute e atualize o agente:
-
-### A. Busca de Gastos (`search_expenses`)
-Solicita consulta a gastos do usuário.
-* **Params:**
-  * `category` (string, opcional): Categoria específica.
-  * `start_date` (string, opcional): Formato `YYYY-MM-DD`.
-  * `end_date` (string, opcional): Formato `YYYY-MM-DD`.
-
-### B. Adicionar Gasto (`create_expense`)
-Solicita criação de um gasto.
-* **Params:**
-  * `date` (string): Formato `YYYY-MM-DD`.
-  * `category` (string): Nome da categoria.
-  * `description` (string, opcional): Descrição textual.
-  * `amount` (number/string): Valor decimal.
-
-### C. Ajustar/Criar Orçamento (`set_budget`)
-Solicita a criação ou ajuste do limite de orçamento mensal.
-* **Params:**
-  * `date` (string): Mês/ano de referência (será normalizado para o dia 1 no backend).
-  * `amount` (number/string): Valor limite.
+Para garantir a eficiência e segurança:
+1. **Sem Loops Recursivos no Servidor**: O agente no backend não pode solicitar ações em cadeia que excedam o limite estabelecido de 2 eventos de retorno.
+2. **Sem Exposição de Identificadores Internos**: Conforme a regra de segurança geral da aplicação, nenhum dos eventos estruturados transmitidos no stream de chat deve expor `user_id` ou chaves internas de banco de dados.
