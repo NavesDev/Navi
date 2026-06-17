@@ -35,6 +35,12 @@ interface Expense {
   created_at: string;
 }
 
+interface Budget {
+  id: number;
+  date: string;
+  amount: string;
+}
+
 const AVAILABLE_ICONS = [
   'fastfood',
   'directions-car',
@@ -52,7 +58,9 @@ const AVAILABLE_ICONS = [
 
 export const Finances: React.FC<FinancesProps> = ({ token }) => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesMap, setCategoriesMap] = useState<Record<number, Category>>({});
+  const [budgets, setBudgets] = useState<Budget[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Modal State
@@ -68,6 +76,8 @@ export const Finances: React.FC<FinancesProps> = ({ token }) => {
         headers: { 'Authorization': `Bearer ${token}` },
       });
       const categoriesData: Category[] = await catRes.json();
+      setCategories(categoriesData);
+      
       const catMap: Record<number, Category> = {};
       categoriesData.forEach(c => {
         catMap[c.id] = c;
@@ -80,6 +90,13 @@ export const Finances: React.FC<FinancesProps> = ({ token }) => {
       });
       const expensesData: Expense[] = await expRes.json();
       setExpenses(expensesData.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+
+      // Fetch Budgets
+      const budgetRes = await fetch(`${API_URL}/budgets`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      const budgetsData: Budget[] = await budgetRes.json();
+      setBudgets(budgetsData);
     } catch (error) {
       console.error('Failed to fetch financial data:', error);
       Alert.alert('Erro', 'Não foi possível carregar os dados financeiros.');
@@ -132,39 +149,91 @@ export const Finances: React.FC<FinancesProps> = ({ token }) => {
     }
   };
 
-  const totalSpent = expenses.reduce((acc, curr) => acc + parseFloat(curr.amount || '0'), 0);
+  // Calculations for current month (YYYY-MM)
+  const now = new Date();
+  const currentYearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`; // "YYYY-MM"
+
+  // Budget for current month
+  const activeBudget = budgets.find(b => b.date.startsWith(currentYearMonth));
+  const budgetAmount = activeBudget ? parseFloat(activeBudget.amount) : 0;
+
+  // Expenses for current month
+  const currentMonthExpenses = expenses.filter(e => e.date.startsWith(currentYearMonth));
+  const totalSpentCurrentMonth = currentMonthExpenses.reduce((acc, curr) => acc + parseFloat(curr.amount || '0'), 0);
+
+  // Balance = Budget - Expenses
+  const currentBalance = budgetAmount - totalSpentCurrentMonth;
 
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Finanças 🌌</Text>
-        <TouchableOpacity
-          style={styles.addCategoryButton}
-          onPress={() => setIsModalOpen(true)}
-          activeOpacity={0.8}
-        >
-          <MaterialIcons name="add" size={16} color="#0A0A0A" />
-          <Text style={styles.addCategoryButtonText}>CATEGORIA</Text>
-        </TouchableOpacity>
       </View>
 
       {isLoading ? (
         <ActivityIndicator size="large" color={theme.colors.primary} style={styles.loader} />
       ) : (
         <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
-          {/* Summary Card */}
+          
+          {/* SECTION 1: Resumo / Saldo */}
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Visão Geral (Este Mês)</Text>
+          </View>
+          
           <View style={styles.summaryCard}>
-            <Text style={styles.summaryLabel}>TOTAL GASTO REGISTRADO</Text>
-            <Text style={styles.summaryValue}>R$ {totalSpent.toFixed(2)}</Text>
-            <View style={styles.summaryFooter}>
-              <MaterialIcons name="trending-up" size={16} color={theme.colors.primary} />
-              <Text style={styles.summaryFooterText}>{expenses.length} transações registradas</Text>
+            <View style={styles.summaryGrid}>
+              <View style={styles.summaryItem}>
+                <Text style={styles.summaryLabel}>ORÇAMENTO</Text>
+                <Text style={styles.summaryValue}>R$ {budgetAmount.toFixed(2)}</Text>
+              </View>
+              <View style={styles.summaryItem}>
+                <Text style={styles.summaryLabel}>GASTOS</Text>
+                <Text style={[styles.summaryValue, { color: '#FF6B6B' }]}>- R$ {totalSpentCurrentMonth.toFixed(2)}</Text>
+              </View>
+            </View>
+
+            <View style={styles.divider} />
+
+            <View style={styles.balanceRow}>
+              <Text style={styles.balanceLabel}>SALDO DISPONÍVEL</Text>
+              <Text style={[styles.balanceValue, currentBalance >= 0 ? styles.balancePositive : styles.balanceNegative]}>
+                R$ {currentBalance.toFixed(2)}
+              </Text>
             </View>
           </View>
 
-          {/* Transactions List */}
-          <Text style={styles.sectionTitle}>Histórico de Gastos</Text>
+          {/* SECTION 2: Categorias */}
+          <View style={styles.sectionHeaderWithAction}>
+            <Text style={styles.sectionTitle}>Categorias</Text>
+            <TouchableOpacity
+              style={styles.addCategoryLink}
+              onPress={() => setIsModalOpen(true)}
+              activeOpacity={0.7}
+            >
+              <MaterialIcons name="add-circle-outline" size={16} color={theme.colors.primary} />
+              <Text style={styles.addCategoryLinkText}>Nova Categoria</Text>
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.categoriesScroll}
+            contentContainerStyle={styles.categoriesContent}
+          >
+            {categories.map((category) => (
+              <View key={category.id} style={styles.categoryBadge}>
+                <MaterialIcons name={category.icon as any} size={16} color={theme.colors.onPrimaryContainer} style={{ marginRight: 6 }} />
+                <Text style={styles.categoryBadgeText}>{category.name}</Text>
+              </View>
+            ))}
+          </ScrollView>
+
+          {/* SECTION 3: Histórico de Gastos */}
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Histórico de Transações</Text>
+          </View>
 
           {expenses.length === 0 ? (
             <View style={styles.emptyContainer}>
@@ -277,9 +346,6 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 24,
     paddingVertical: 16,
     borderBottomWidth: 1,
@@ -291,29 +357,44 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: theme.colors.primary,
   },
-  addCategoryButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: theme.colors.primary,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 16,
-  },
-  addCategoryButtonText: {
-    fontFamily: theme.fonts.semibold,
-    fontSize: 10,
-    color: '#0A0A0A',
-    marginLeft: 4,
-    letterSpacing: 1,
-  },
   scrollView: {
     flex: 1,
   },
   content: {
-    padding: 24,
+    paddingBottom: 40,
   },
   loader: {
     marginTop: 40,
+  },
+  sectionHeader: {
+    paddingHorizontal: 24,
+    marginTop: 24,
+    marginBottom: 12,
+  },
+  sectionHeaderWithAction: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    marginTop: 24,
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontFamily: theme.fonts.semibold,
+    fontSize: 12,
+    color: theme.colors.secondary,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+  },
+  addCategoryLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  addCategoryLinkText: {
+    fontFamily: theme.fonts.semibold,
+    fontSize: 12,
+    color: theme.colors.primary,
+    marginLeft: 4,
   },
   summaryCard: {
     backgroundColor: theme.colors.surface,
@@ -321,42 +402,79 @@ const styles = StyleSheet.create({
     borderColor: '#2A2A2A',
     borderRadius: theme.rounded.soft,
     padding: 20,
-    marginBottom: 24,
+    marginHorizontal: 24,
+  },
+  summaryGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  summaryItem: {
+    flex: 1,
   },
   summaryLabel: {
+    fontFamily: theme.fonts.semibold,
+    fontSize: 9,
+    color: theme.colors.secondary,
+    letterSpacing: 1,
+  },
+  summaryValue: {
+    fontFamily: theme.fonts.semibold,
+    fontSize: 18,
+    color: theme.colors.onSurface,
+    marginTop: 4,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#2A2A2A',
+    marginVertical: 16,
+  },
+  balanceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  balanceLabel: {
     fontFamily: theme.fonts.semibold,
     fontSize: 10,
     color: theme.colors.secondary,
     letterSpacing: 1.5,
   },
-  summaryValue: {
+  balanceValue: {
     fontFamily: theme.fonts.headline,
-    fontSize: 36,
-    color: theme.colors.primary,
-    marginVertical: 8,
+    fontSize: 24,
   },
-  summaryFooter: {
+  balancePositive: {
+    color: '#6BCB77',
+  },
+  balanceNegative: {
+    color: '#FF6B6B',
+  },
+  categoriesScroll: {
+    marginVertical: 4,
+  },
+  categoriesContent: {
+    paddingHorizontal: 24,
+    paddingRight: 32,
+    flexDirection: 'row',
+  },
+  categoryBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
+    backgroundColor: theme.colors.primaryContainer,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 16,
+    marginRight: 8,
   },
-  summaryFooterText: {
-    fontFamily: theme.fonts.body,
+  categoryBadgeText: {
+    fontFamily: theme.fonts.medium,
     fontSize: 12,
-    color: theme.colors.secondary,
-    marginLeft: 6,
-  },
-  sectionTitle: {
-    fontFamily: theme.fonts.semibold,
-    fontSize: 14,
-    color: theme.colors.secondary,
-    letterSpacing: 1.5,
-    textTransform: 'uppercase',
-    marginBottom: 16,
+    color: theme.colors.onPrimaryContainer,
   },
   emptyContainer: {
     alignItems: 'center',
     paddingVertical: 40,
+    marginHorizontal: 24,
   },
   emptyText: {
     fontFamily: theme.fonts.body,
@@ -372,6 +490,7 @@ const styles = StyleSheet.create({
     borderColor: '#2A2A2A',
     borderRadius: theme.rounded.soft,
     padding: 16,
+    marginHorizontal: 24,
     marginBottom: 12,
   },
   iconContainer: {
