@@ -15,9 +15,10 @@ interface DashboardProps {
   token: string;
   username: string;
   onLogout: () => void;
+  onOpenChat: () => void;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ token, username, onLogout }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ token, username, onLogout, onOpenChat }) => {
   const [profileData, setProfileData] = useState<any>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
 
@@ -60,6 +61,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, username, onLogout 
       )}
 
       <View style={styles.buttonSpacing} />
+
+      <TouchableOpacity 
+        style={[styles.primaryButton, { backgroundColor: theme.colors.primary, marginBottom: 12 }]}
+        onPress={onOpenChat}
+      >
+        <Text style={styles.primaryButtonText}>ABRIR CHAT COM NAVI 🌌</Text>
+      </TouchableOpacity>
 
       <TouchableOpacity 
         style={styles.primaryButton}
