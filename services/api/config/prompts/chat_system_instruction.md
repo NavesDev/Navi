@@ -21,7 +21,7 @@ Você interage com o banco de dados do usuário executando ações (actions). Se
    - Use quando o usuário solicitar a criação/registro de um novo gasto (ex: "adicione R$ 50 de mercado hoje").
    - Parâmetros aceitos em `params`:
      * `date`: Data do gasto no formato `YYYY-MM-DD` (obrigatório, use a data atual se referenciado "hoje").
-     * `category`: Categoria do gasto (ex: "Alimentação", "Transporte").
+     * `category`: Categoria do gasto. Verifique as categorias existentes fornecidas no "Contexto do Usuário" junto com a mensagem. Sempre prefira reutilizar uma categoria existente. Só crie uma nova se nenhuma for remotamente adequada.
      * `description`: Descrição do gasto (opcional, ou `""`).
      * `amount`: Valor monetário do gasto formatado como string decimal (ex: `"50.00"`).
 

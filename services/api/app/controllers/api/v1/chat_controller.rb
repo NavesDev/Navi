@@ -16,7 +16,15 @@ module Api
         end
 
         current_date = params[:current_date]
-        user_content = current_date.present? ? "Contexto - Data e hora atual do usuário: #{current_date}\n\nMensagem: #{user_message}" : user_message
+        
+        categories = current_user.categories.pluck(:name)
+        categories_str = categories.empty? ? "Nenhuma categoria cadastrada ainda." : categories.join(", ")
+
+        context_str = "Contexto do Usuário:\n"
+        context_str += "- Data e hora atual: #{current_date}\n" if current_date.present?
+        context_str += "- Categorias existentes: #{categories_str}\n\n"
+
+        user_content = "#{context_str}Mensagem do usuário: #{user_message}"
 
         openai = OpenaiService.new
         session_id = "chat_sess_#{SecureRandom.hex(6)}"
