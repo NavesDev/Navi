@@ -48,7 +48,7 @@ class Api::V1::ChatTest < ActionDispatch::IntegrationTest
 
   test "should stream two events when search action is requested and executed" do
     # Arrange
-    @user.expenses.create!(date: "2026-06-15", category: "Alimentação", amount: 50.0)
+    @user.expenses.create!(date: "2026-06-15", category: categories(:one), amount: 50.0)
 
     openai_instance = OpenaiService.new
     
@@ -133,7 +133,7 @@ class Api::V1::ChatTest < ActionDispatch::IntegrationTest
     assert_includes response.body, '"message":"Gasto de R$ 45,00 em Alimentação criado com sucesso!"'
     
     created_expense = @user.expenses.last
-    assert_equal "Alimentação", created_expense.category
+    assert_equal "Alimentação", created_expense.category.name
     assert_equal 45.0, created_expense.amount.to_f
     assert_equal "Jantar", created_expense.description
   end

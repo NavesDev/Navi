@@ -74,7 +74,8 @@ module Api
         when "search_expenses"
           expenses = current_user.expenses
           if params["category"].present?
-            expenses = expenses.where(category: params["category"])
+            category_id = current_user.categories.find_by("slug = ? OR name = ?", params["category"]&.downcase&.parameterize, params["category"])&.id
+            expenses = expenses.where(category_id: category_id) if category_id
           end
           if params["start_date"].present?
             expenses = expenses.where("date >= ?", params["start_date"])
@@ -82,7 +83,7 @@ module Api
           if params["end_date"].present?
             expenses = expenses.where("date <= ?", params["end_date"])
           end
-          expenses.map { |e| { id: e.id, date: e.date, category: e.category, description: e.description, amount: e.amount.to_f } }
+          expenses.map { |e| { id: e.id, date: e.date, category: e.category&.name, description: e.description, amount: e.amount.to_f } }
         when "search_budgets"
           budgets = current_user.budgets
           if params["start_date"].present?
@@ -95,14 +96,22 @@ module Api
           end
           budgets.map { |b| { date: b.date, amount: b.amount.to_f } }
         when "create_expense"
+          category_name = params["category"].presence || "Outros"
+          slug = category_name.to_s.downcase.parameterize
+          slug = "outros" if slug.blank?
+          category = current_user.categories.find_or_create_by!(slug: slug) do |c|
+            c.name = category_name
+            c.icon = "category"
+          end
+
           expense = current_user.expenses.build(
             date: params["date"],
-            category: params["category"],
+            category_id: category.id,
             description: params["description"],
             amount: params["amount"].to_f
           )
           if expense.save
-            { status: "success", expense: { id: expense.id, date: expense.date, category: expense.category, description: expense.description, amount: expense.amount.to_f } }
+            { status: "success", expense: { id: expense.id, date: expense.date, category: expense.category&.name, description: expense.description, amount: expense.amount.to_f } }
           else
             { status: "error", errors: expense.errors.full_messages }
           end
@@ -111,12 +120,23 @@ module Api
           if expense
             update_params = {}
             update_params[:date] = params["date"] if params["date"].present?
-            update_params[:category] = params["category"] if params["category"].present?
+            
+            if params["category"].present?
+              category_name = params["category"]
+              slug = category_name.to_s.downcase.parameterize
+              slug = "outros" if slug.blank?
+              category = current_user.categories.find_or_create_by!(slug: slug) do |c|
+                c.name = category_name
+                c.icon = "category"
+              end
+              update_params[:category_id] = category.id
+            end
+
             update_params[:description] = params["description"] if params["description"].present?
             update_params[:amount] = params["amount"].to_f if params["amount"].present?
             
             if expense.update(update_params)
-              { status: "success", expense: { id: expense.id, date: expense.date, category: expense.category, description: expense.description, amount: expense.amount.to_f } }
+              { status: "success", expense: { id: expense.id, date: expense.date, category: expense.category&.name, description: expense.description, amount: expense.amount.to_f } }
             else
               { status: "error", errors: expense.errors.full_messages }
             end

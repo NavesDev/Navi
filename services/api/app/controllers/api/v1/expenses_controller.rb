@@ -7,8 +7,8 @@ module Api
       def index
         expenses = current_user.expenses
 
-        if params[:category].present?
-          expenses = expenses.where(category: params[:category])
+        if params[:category_id].present?
+          expenses = expenses.where(category_id: params[:category_id])
         end
 
         if params[:start_date].present?
@@ -63,14 +63,14 @@ module Api
       end
 
       def expense_params
-        params.permit(:date, :category, :description, :amount)
+        params.permit(:date, :category_id, :description, :amount)
       end
 
       def expense_as_json(expense)
         {
           id: expense.id,
           date: expense.date,
-          category: expense.category,
+          category_id: expense.category_id,
           description: expense.description,
           amount: expense.amount.to_s,
           created_at: expense.created_at,

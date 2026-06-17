@@ -8,6 +8,7 @@ Rails.application.routes.draw do
       post "auth/login", to: "auth#login"
       get "auth/me", to: "auth#me"
 
+      resources :categories
       resources :expenses
       resources :budgets
       post "chat", to: "chat#create"

@@ -7,6 +7,9 @@ class Api::V1::ExpensesTest < ActionDispatch::IntegrationTest
     @token = JwtService.encode(user_id: @user.id)
     @headers = { "Authorization" => "Bearer #{@token}", "Content-Type" => "application/json" }
     
+    @user_category = categories(:one)
+    @other_category = categories(:two)
+
     @user_expense = expenses(:one) # belongs to user one
     @other_expense = expenses(:two) # belongs to user two
   end
@@ -21,7 +24,7 @@ class Api::V1::ExpensesTest < ActionDispatch::IntegrationTest
     assert_response :ok
     json_response = JSON.parse(response.body)
     assert_equal 1, json_response.size
-    assert_equal @user_expense.category, json_response[0]["category"]
+    assert_equal @user_category.id, json_response[0]["category_id"]
     
     # Assert security rule: user_id is NOT leaked
     assert_nil json_response[0]["user_id"]
@@ -37,25 +40,25 @@ class Api::V1::ExpensesTest < ActionDispatch::IntegrationTest
 
   test "should filter listed expenses by category when category filter is provided" do
     # Arrange
-    # Create another expense with a different category
-    Expense.create!(date: "2026-06-17", category: "Transporte", amount: 20.0, user: @user)
+    other_cat = Category.create!(name: "Transporte", icon: "directions-car", user: @user)
+    Expense.create!(date: "2026-06-17", category: other_cat, amount: 20.0, user: @user)
 
     # Act
-    get "/api/v1/expenses?category=Transporte", headers: @headers
+    get "/api/v1/expenses?category_id=#{other_cat.id}", headers: @headers
 
     # Assert
     assert_response :ok
     json_response = JSON.parse(response.body)
     assert_equal 1, json_response.size
-    assert_equal "Transporte", json_response[0]["category"]
+    assert_equal other_cat.id, json_response[0]["category_id"]
   end
 
   test "should filter listed expenses by date range when start and end dates are provided" do
     # Arrange
-    # Create expenses outside and inside the range
-    Expense.create!(date: "2026-06-01", category: "Transporte", amount: 20.0, user: @user)
-    Expense.create!(date: "2026-06-10", category: "Alimentação", amount: 30.0, user: @user)
-    Expense.create!(date: "2026-06-20", category: "Lazer", amount: 40.0, user: @user)
+    other_cat = Category.create!(name: "Transporte", icon: "directions-car", user: @user)
+    Expense.create!(date: "2026-06-01", category: other_cat, amount: 20.0, user: @user)
+    Expense.create!(date: "2026-06-10", category: @user_category, amount: 30.0, user: @user)
+    Expense.create!(date: "2026-06-20", category: other_cat, amount: 40.0, user: @user)
 
     # Act
     get "/api/v1/expenses?start_date=2026-06-05&end_date=2026-06-15", headers: @headers
@@ -65,7 +68,7 @@ class Api::V1::ExpensesTest < ActionDispatch::IntegrationTest
     json_response = JSON.parse(response.body)
     # user_expense is "2026-06-16", and we created one for "2026-06-10"
     assert_equal 1, json_response.size
-    assert_equal "Alimentação", json_response[0]["category"]
+    assert_equal @user_category.id, json_response[0]["category_id"]
   end
 
   # --- Show Tests ---
@@ -77,7 +80,7 @@ class Api::V1::ExpensesTest < ActionDispatch::IntegrationTest
     # Assert
     assert_response :ok
     json_response = JSON.parse(response.body)
-    assert_equal @user_expense.category, json_response["category"]
+    assert_equal @user_expense.category_id, json_response["category_id"]
     
     # Assert security rule: user_id is NOT leaked
     assert_nil json_response["user_id"]
@@ -97,7 +100,7 @@ class Api::V1::ExpensesTest < ActionDispatch::IntegrationTest
     # Arrange
     params = {
       date: "2026-06-17",
-      category: "Lazer",
+      category_id: @user_category.id,
       description: "Cinema com amigos",
       amount: 45.00
     }.to_json
@@ -108,7 +111,7 @@ class Api::V1::ExpensesTest < ActionDispatch::IntegrationTest
     # Assert
     assert_response :created
     json_response = JSON.parse(response.body)
-    assert_equal "Lazer", json_response["category"]
+    assert_equal @user_category.id, json_response["category_id"]
     assert_equal "45.0", json_response["amount"]
     
     # Assert security rule: user_id is NOT leaked
@@ -119,7 +122,7 @@ class Api::V1::ExpensesTest < ActionDispatch::IntegrationTest
     # Arrange
     params = {
       date: "",
-      category: "",
+      category_id: "",
       amount: -10.00
     }.to_json
 
@@ -138,8 +141,9 @@ class Api::V1::ExpensesTest < ActionDispatch::IntegrationTest
 
   test "should update expense when it belongs to authenticated user and parameters are valid" do
     # Arrange
+    other_cat = Category.create!(name: "Alimentação Saudável", icon: "restaurant", user: @user)
     params = {
-      category: "Alimentação Saudável",
+      category_id: other_cat.id,
       amount: 120.00
     }.to_json
 
@@ -149,7 +153,7 @@ class Api::V1::ExpensesTest < ActionDispatch::IntegrationTest
     # Assert
     assert_response :ok
     json_response = JSON.parse(response.body)
-    assert_equal "Alimentação Saudável", json_response["category"]
+    assert_equal other_cat.id, json_response["category_id"]
     assert_equal "120.0", json_response["amount"]
     
     # Assert security rule: user_id is NOT leaked
@@ -159,7 +163,7 @@ class Api::V1::ExpensesTest < ActionDispatch::IntegrationTest
   test "should return not found when updating expense belonging to another user" do
     # Arrange
     params = {
-      category: "Novo"
+      category_id: @user_category.id
     }.to_json
 
     # Act
