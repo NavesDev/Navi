@@ -5,6 +5,7 @@ import {
   ScrollView,
   Platform,
   StyleSheet,
+  View,
 } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
@@ -19,6 +20,10 @@ import { authService } from './src/services/auth';
 import { theme } from './src/styles/theme';
 import { AuthForm } from './src/components/AuthForm';
 import { Chat } from './src/components/Chat';
+import { Finances } from './src/components/Finances';
+import { Routines } from './src/components/Routines';
+import { Settings } from './src/components/Settings';
+import { BottomTabBar, TabType } from './src/components/BottomTabBar';
 
 // Prevent the splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
@@ -27,6 +32,7 @@ export default function App() {
   const [isSessionRestoring, setIsSessionRestoring] = useState(true);
   const [userToken, setUserToken] = useState<string | null>(null);
   const [username, setUsername] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<TabType>('chat');
 
   // Load custom fonts using expo-font
   const [fontsLoaded, fontError] = useFonts({
@@ -64,6 +70,7 @@ export default function App() {
   const handleAuthSuccess = (token: string, user: string) => {
     setUserToken(token);
     setUsername(user);
+    setActiveTab('chat');
   };
 
   const handleLogout = async () => {
@@ -80,7 +87,15 @@ export default function App() {
     <SafeAreaProvider>
       <SafeAreaView style={styles.container}>
         {userToken && username ? (
-          <Chat token={userToken} onLogout={handleLogout} />
+          <View style={styles.tabContentContainer}>
+            <View style={styles.tabView}>
+              {activeTab === 'chat' && <Chat token={userToken} />}
+              {activeTab === 'finances' && <Finances token={userToken} />}
+              {activeTab === 'routines' && <Routines token={userToken} />}
+              {activeTab === 'settings' && <Settings token={userToken} onLogout={handleLogout} />}
+            </View>
+            <BottomTabBar activeTab={activeTab} onTabPress={setActiveTab} />
+          </View>
         ) : (
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -109,5 +124,12 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'center',
     padding: 24,
+  },
+  tabContentContainer: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  tabView: {
+    flex: 1,
   },
 });

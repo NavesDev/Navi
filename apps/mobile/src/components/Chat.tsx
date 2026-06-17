@@ -17,7 +17,7 @@ import { useChatStream } from '../hooks/useChatStream';
 
 interface ChatProps {
   token: string;
-  onLogout: () => void;
+  onLogout?: () => void;
 }
 
 export const Chat: React.FC<ChatProps> = ({ token, onLogout }) => {
@@ -39,9 +39,13 @@ export const Chat: React.FC<ChatProps> = ({ token, onLogout }) => {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={onLogout}>
-          <MaterialIcons name="logout" size={22} color={theme.colors.primary} />
-        </TouchableOpacity>
+        {onLogout ? (
+          <TouchableOpacity style={styles.backButton} onPress={onLogout}>
+            <MaterialIcons name="logout" size={22} color={theme.colors.primary} />
+          </TouchableOpacity>
+        ) : (
+          <View style={{ width: 24 }} />
+        )}
         <View style={styles.headerTitleContainer}>
           <Text style={styles.headerTitle}>Navi AI 🌌</Text>
           <Text style={styles.headerSubtitle}>Sua inteligência financeira</Text>
