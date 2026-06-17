@@ -82,7 +82,7 @@ class Api::V1::AuthTest < ActionDispatch::IntegrationTest
     # Assert
     assert_response :ok
     json_response = JSON.parse(response.body)
-    assert_equal @user.id, json_response["id"]
+    assert_nil json_response["id"]
     assert_equal @user.username, json_response["username"]
   end
 

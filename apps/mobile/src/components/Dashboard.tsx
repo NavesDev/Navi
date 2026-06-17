@@ -54,7 +54,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, username, onLogout 
         <View style={styles.profileContainer}>
           <Text style={styles.label}>Resposta de /auth/me:</Text>
           <Text style={styles.profileDataText}>
-            ID: {profileData.id} | Usuário: {profileData.username}
+            Usuário: {profileData.username}
           </Text>
         </View>
       )}

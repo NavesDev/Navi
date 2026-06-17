@@ -9,7 +9,7 @@ module Api
         if user.save
           token = JwtService.encode(user_id: user.id)
           render json: {
-            user: { id: user.id, username: user.username },
+            user: { username: user.username },
             token: token
           }, status: :created
         else
@@ -23,7 +23,7 @@ module Api
         if user&.authenticate(params[:password])
           token = JwtService.encode(user_id: user.id)
           render json: {
-            user: { id: user.id, username: user.username },
+            user: { username: user.username },
             token: token
           }, status: :ok
         else
@@ -33,7 +33,7 @@ module Api
 
       # GET /api/v1/auth/me
       def me
-        render json: { id: current_user.id, username: current_user.username }, status: :ok
+        render json: { username: current_user.username }, status: :ok
       end
 
       private
