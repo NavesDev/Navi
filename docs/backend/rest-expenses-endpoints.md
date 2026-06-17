@@ -28,7 +28,6 @@ Retorna todos os gastos pertencentes ao usuário autenticado.
     "category": "Alimentação",
     "description": "Jantar restaurante",
     "amount": "85.50",
-    "user_id": 12,
     "created_at": "2026-06-15T20:30:00.000Z",
     "updated_at": "2026-06-15T20:30:00.000Z"
   },
@@ -38,7 +37,6 @@ Retorna todos os gastos pertencentes ao usuário autenticado.
     "category": "Transporte",
     "description": "Corrida de aplicativo",
     "amount": "22.90",
-    "user_id": 12,
     "created_at": "2026-06-16T10:15:00.000Z",
     "updated_at": "2026-06-16T10:15:00.000Z"
   }
@@ -75,7 +73,6 @@ Registra um novo gasto para o usuário autenticado.
   "category": "Alimentação",
   "description": "Supermercado do mês",
   "amount": "350.75",
-  "user_id": 12,
   "created_at": "2026-06-17T01:10:00.000Z",
   "updated_at": "2026-06-17T01:10:00.000Z"
 }
@@ -96,8 +93,7 @@ Busca um gasto específico do usuário.
   "date": "2026-06-15",
   "category": "Alimentação",
   "description": "Jantar restaurante",
-  "amount": "85.50",
-  "user_id": 12
+  "amount": "85.50"
 }
 ```
 
@@ -126,8 +122,7 @@ Modifica um ou mais campos de um gasto existente.
   "date": "2026-06-15",
   "category": "Alimentação",
   "description": "Jantar restaurante (com sobremesa)",
-  "amount": "95.00",
-  "user_id": 12
+  "amount": "95.00"
 }
 ```
 

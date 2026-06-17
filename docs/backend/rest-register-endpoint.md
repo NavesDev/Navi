@@ -38,7 +38,6 @@ Retorna os dados básicos do usuário criado e o token JWT correspondente para a
 ```json
 {
   "user": {
-    "id": 1,
     "username": "usuario_exemplo"
   },
   "token": "eyJhbGciOiJIUzI1NiJ9..."

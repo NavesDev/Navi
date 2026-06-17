@@ -38,7 +38,6 @@ Autentica as credenciais do usuário.
 ```json
 {
   "user": {
-    "id": 1,
     "username": "usuario_exemplo"
   },
   "token": "eyJhbGciOiJIUzI1NiJ9..."
@@ -66,7 +65,6 @@ Retorna os dados do usuário atualmente autenticado a partir do token enviado.
 #### Resposta de Sucesso (200 OK):
 ```json
 {
-  "id": 1,
   "username": "usuario_exemplo"
 }
 ```

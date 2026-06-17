@@ -28,7 +28,6 @@ Retorna o histórico de orçamentos mensais do usuário autenticado.
     "id": 1,
     "date": "2026-05-01",
     "amount": "4500.00",
-    "user_id": 12,
     "created_at": "2026-05-01T08:00:00.000Z",
     "updated_at": "2026-05-01T08:00:00.000Z"
   },
@@ -36,7 +35,6 @@ Retorna o histórico de orçamentos mensais do usuário autenticado.
     "id": 2,
     "date": "2026-06-01",
     "amount": "5000.00",
-    "user_id": 12,
     "created_at": "2026-06-01T09:15:00.000Z",
     "updated_at": "2026-06-01T09:15:00.000Z"
   }
@@ -61,7 +59,7 @@ Registra o orçamento planejado para um determinado mês.
 ### Regras de Validação:
 * `date`: Obrigatório. Deve ser formatado como a data de início do mês (`YYYY-MM-01`).
 * `amount`: Obrigatório. Deve ser maior que 0.
-* **Unicidade**: O par `[user_id, date]` deve ser único na tabela de orçamentos.
+* **Unicidade**: O par `[usuário, date]` deve ser único na tabela de orçamentos.
 
 ### Exemplo de Resposta de Sucesso (201 Created)
 ```json
@@ -69,7 +67,6 @@ Registra o orçamento planejado para um determinado mês.
   "id": 3,
   "date": "2026-07-01",
   "amount": "5500.00",
-  "user_id": 12,
   "created_at": "2026-06-17T01:12:00.000Z",
   "updated_at": "2026-06-17T01:12:00.000Z"
 }
@@ -95,8 +92,7 @@ Busca detalhes de um orçamento mensal específico.
 {
   "id": 2,
   "date": "2026-06-01",
-  "amount": "5000.00",
-  "user_id": 12
+  "amount": "5000.00"
 }
 ```
 
@@ -120,7 +116,6 @@ Modifica o valor do limite do orçamento para um mês correspondente.
   "id": 2,
   "date": "2026-06-01",
   "amount": "5200.00",
-  "user_id": 12,
   "updated_at": "2026-06-17T01:14:00.000Z"
 }
 ```
