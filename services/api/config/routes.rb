@@ -9,6 +9,7 @@ Rails.application.routes.draw do
       get "auth/me", to: "auth#me"
 
       resources :expenses
+      resources :budgets
     end
   end
 end
