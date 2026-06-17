@@ -25,6 +25,8 @@ services:
       - "3000:3000"
     volumes:
       - ../../services/api:/rails
+    env_file:
+      - ../../services/api/.env
     environment:
       RAILS_ENV: development
       DATABASE_URL: postgres://postgres:local_postgres_password@db:5432/api_development
