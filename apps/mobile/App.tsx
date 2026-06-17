@@ -18,7 +18,6 @@ import {
 import { authService } from './src/services/auth';
 import { theme } from './src/styles/theme';
 import { AuthForm } from './src/components/AuthForm';
-import { Dashboard } from './src/components/Dashboard';
 import { Chat } from './src/components/Chat';
 
 // Prevent the splash screen from auto-hiding
@@ -28,7 +27,6 @@ export default function App() {
   const [isSessionRestoring, setIsSessionRestoring] = useState(true);
   const [userToken, setUserToken] = useState<string | null>(null);
   const [username, setUsername] = useState<string | null>(null);
-  const [isChatOpen, setIsChatOpen] = useState(false);
 
   // Load custom fonts using expo-font
   const [fontsLoaded, fontError] = useFonts({
@@ -72,7 +70,6 @@ export default function App() {
     await authService.clearSession();
     setUserToken(null);
     setUsername(null);
-    setIsChatOpen(false);
   };
 
   if (!fontsLoaded && !fontError) {
@@ -82,24 +79,15 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.container}>
-        {userToken && username && isChatOpen ? (
-          <Chat token={userToken} onBack={() => setIsChatOpen(false)} />
+        {userToken && username ? (
+          <Chat token={userToken} onLogout={handleLogout} />
         ) : (
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={styles.keyboardView}
           >
             <ScrollView contentContainerStyle={styles.scrollContainer}>
-              {userToken && username ? (
-                <Dashboard
-                  token={userToken}
-                  username={username}
-                  onLogout={handleLogout}
-                  onOpenChat={() => setIsChatOpen(true)}
-                />
-              ) : (
-                <AuthForm onSuccess={handleAuthSuccess} />
-              )}
+              <AuthForm onSuccess={handleAuthSuccess} />
             </ScrollView>
             <StatusBar style="light" />
           </KeyboardAvoidingView>

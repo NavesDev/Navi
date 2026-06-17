@@ -17,10 +17,10 @@ import { useChatStream } from '../hooks/useChatStream';
 
 interface ChatProps {
   token: string;
-  onBack: () => void;
+  onLogout: () => void;
 }
 
-export const Chat: React.FC<ChatProps> = ({ token, onBack }) => {
+export const Chat: React.FC<ChatProps> = ({ token, onLogout }) => {
   const { messages, isStreaming, sendMessage } = useChatStream(token);
   const [inputText, setInputText] = useState('');
   const scrollViewRef = useRef<ScrollView>(null);
@@ -39,8 +39,8 @@ export const Chat: React.FC<ChatProps> = ({ token, onBack }) => {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={onBack}>
-          <MaterialIcons name="arrow-back" size={24} color={theme.colors.primary} />
+        <TouchableOpacity style={styles.backButton} onPress={onLogout}>
+          <MaterialIcons name="logout" size={22} color={theme.colors.primary} />
         </TouchableOpacity>
         <View style={styles.headerTitleContainer}>
           <Text style={styles.headerTitle}>Navi AI 🌌</Text>
