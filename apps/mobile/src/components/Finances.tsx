@@ -11,6 +11,7 @@ import {
   Modal,
   TextInput,
   Dimensions,
+  Animated,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -87,7 +88,7 @@ export const Finances: React.FC<FinancesProps> = ({ token, visible }) => {
   const [categoryBudgetAmount, setCategoryBudgetAmount] = useState('');
   const [isSubmittingCategoryBudget, setIsSubmittingCategoryBudget] = useState(false);
   const [showDeleteCategoryBudgetConfirm, setShowDeleteCategoryBudgetConfirm] = useState(false);
-  const [currentPageIndex, setCurrentPageIndex] = useState(0);
+  const scrollX = React.useRef(new Animated.Value(0)).current;
 
   // Category Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -563,19 +564,15 @@ export const Finances: React.FC<FinancesProps> = ({ token, visible }) => {
 
             return (
               <View>
-                <ScrollView
+                <Animated.ScrollView
                   horizontal
                   pagingEnabled
                   showsHorizontalScrollIndicator={false}
-                  snapToInterval={PAGE_WIDTH}
-                  decelerationRate="fast"
-                  snapToAlignment="start"
                   contentContainerStyle={styles.categoryBudgetsScrollContent}
-                  onScroll={(e) => {
-                    const contentOffset = e.nativeEvent.contentOffset.x;
-                    const index = Math.round(contentOffset / PAGE_WIDTH);
-                    setCurrentPageIndex(index);
-                  }}
+                  onScroll={Animated.event(
+                    [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+                    { useNativeDriver: false }
+                  )}
                   scrollEventThrottle={16}
                 >
                   {categoryPages.map((pageCategories, pageIndex) => (
@@ -647,19 +644,55 @@ export const Finances: React.FC<FinancesProps> = ({ token, visible }) => {
                       })}
                     </View>
                   ))}
-                </ScrollView>
+                </Animated.ScrollView>
 
                 {categoryPages.length > 1 && (
                   <View style={styles.paginationDotsContainer}>
-                    {categoryPages.map((_, i) => (
-                      <View
-                        key={i}
-                        style={[
-                          styles.paginationDot,
-                          currentPageIndex === i ? styles.paginationDotActive : null
-                        ]}
-                      />
-                    ))}
+                    {categoryPages.map((_, i) => {
+                      const dotWidth = scrollX.interpolate({
+                        inputRange: [
+                          (i - 1) * PAGE_WIDTH,
+                          i * PAGE_WIDTH,
+                          (i + 1) * PAGE_WIDTH,
+                        ],
+                        outputRange: [6, 14, 6],
+                        extrapolate: 'clamp',
+                      });
+
+                      const dotOpacity = scrollX.interpolate({
+                        inputRange: [
+                          (i - 1) * PAGE_WIDTH,
+                          i * PAGE_WIDTH,
+                          (i + 1) * PAGE_WIDTH,
+                        ],
+                        outputRange: [0.4, 1, 0.4],
+                        extrapolate: 'clamp',
+                      });
+
+                      const dotColor = scrollX.interpolate({
+                        inputRange: [
+                          (i - 1) * PAGE_WIDTH,
+                          i * PAGE_WIDTH,
+                          (i + 1) * PAGE_WIDTH,
+                        ],
+                        outputRange: ['#444444', theme.colors.primary, '#444444'],
+                        extrapolate: 'clamp',
+                      });
+
+                      return (
+                        <Animated.View
+                          key={i}
+                          style={[
+                            styles.paginationDot,
+                            {
+                              width: dotWidth,
+                              opacity: dotOpacity,
+                              backgroundColor: dotColor,
+                            },
+                          ]}
+                        />
+                      );
+                    })}
                   </View>
                 )}
               </View>
@@ -1543,10 +1576,6 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     backgroundColor: '#444444',
     marginHorizontal: 4,
-  },
-  paginationDotActive: {
-    backgroundColor: theme.colors.primary,
-    width: 14,
   },
   categoryCardHeader: {
     flexDirection: 'row',
