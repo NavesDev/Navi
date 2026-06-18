@@ -83,6 +83,7 @@ export const Finances: React.FC<FinancesProps> = ({ token, visible }) => {
   const [categoryBudgetAmount, setCategoryBudgetAmount] = useState('');
   const [isSubmittingCategoryBudget, setIsSubmittingCategoryBudget] = useState(false);
   const [showDeleteCategoryBudgetConfirm, setShowDeleteCategoryBudgetConfirm] = useState(false);
+  const [showAllCategoryBudgets, setShowAllCategoryBudgets] = useState(false);
 
   // Category Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -551,7 +552,7 @@ export const Finances: React.FC<FinancesProps> = ({ token, visible }) => {
             </View>
           ) : (
             <View style={{ paddingHorizontal: 24 }}>
-              {categories.map((category) => {
+              {(showAllCategoryBudgets ? categories : categories.slice(0, 4)).map((category) => {
                 const spent = currentMonthExpenses
                   .filter((e) => e.category_id === category.id)
                   .reduce((acc, curr) => acc + parseFloat(curr.amount || '0'), 0);
@@ -616,6 +617,23 @@ export const Finances: React.FC<FinancesProps> = ({ token, visible }) => {
                   </TouchableOpacity>
                 );
               })}
+
+              {categories.length > 4 && (
+                <TouchableOpacity
+                  style={styles.expandButton}
+                  onPress={() => setShowAllCategoryBudgets(!showAllCategoryBudgets)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.expandButtonText}>
+                    {showAllCategoryBudgets ? 'Mostrar Menos' : `Ver Mais (+${categories.length - 4})`}
+                  </Text>
+                  <MaterialIcons
+                    name={showAllCategoryBudgets ? 'keyboard-arrow-up' : 'keyboard-arrow-down'}
+                    size={20}
+                    color={theme.colors.primary}
+                  />
+                </TouchableOpacity>
+              )}
             </View>
           )}
 
@@ -1532,5 +1550,23 @@ const styles = StyleSheet.create({
     color: '#8C8C8C',
     marginTop: 8,
     fontStyle: 'italic',
+  },
+  expandButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: '#2A2A2A',
+    borderRadius: theme.rounded.soft,
+    backgroundColor: '#111111',
+    marginTop: 4,
+    marginBottom: 16,
+  },
+  expandButtonText: {
+    fontFamily: theme.fonts.medium,
+    fontSize: 13,
+    color: theme.colors.primary,
+    marginRight: 6,
   },
 });
