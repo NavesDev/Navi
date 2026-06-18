@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_17_022300) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_18_022352) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -36,6 +36,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_17_022300) do
     t.index ["user_id"], name: "index_categories_on_user_id"
   end
 
+  create_table "category_budgets", force: :cascade do |t|
+    t.decimal "amount", precision: 10, scale: 2, null: false
+    t.bigint "category_id", null: false
+    t.datetime "created_at", null: false
+    t.date "date", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["category_id"], name: "index_category_budgets_on_category_id"
+    t.index ["user_id", "category_id", "date"], name: "index_category_budgets_unique", unique: true
+    t.index ["user_id"], name: "index_category_budgets_on_user_id"
+  end
+
   create_table "expenses", force: :cascade do |t|
     t.decimal "amount", precision: 10, scale: 2, null: false
     t.bigint "category_id", null: false
@@ -58,6 +70,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_17_022300) do
 
   add_foreign_key "budgets", "users"
   add_foreign_key "categories", "users"
+  add_foreign_key "category_budgets", "categories"
+  add_foreign_key "category_budgets", "users"
   add_foreign_key "expenses", "categories"
   add_foreign_key "expenses", "users"
 end
