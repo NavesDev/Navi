@@ -43,35 +43,31 @@ module Api
 
         messages << { role: "user", content: user_content }
 
-        response_1 = openai.chat(messages)
+        response = openai.chat(messages)
+        loop_count = 0
 
-        if response_1["action"].present?
+        while response["action"].present? && loop_count < 3
           write_event({
             session_id: session_id,
             status: "searching",
-            message: response_1["message"],
-            placeholder: response_1["placeholder"]
+            message: response["message"],
+            placeholder: response["placeholder"]
           })
 
-          query_results = execute_action(response_1["action"], response_1["params"])
+          query_results = execute_action(response["action"], response["params"])
 
-          messages << { role: "assistant", content: response_1.to_json }
-          messages << { role: "user", content: "Resultados da busca: #{query_results.to_json}" }
+          messages << { role: "assistant", content: response.to_json }
+          messages << { role: "user", content: "Resultados da action: #{query_results.to_json}" }
 
-          response_2 = openai.chat(messages)
-
-          write_event({
-            session_id: session_id,
-            status: "completed",
-            message: response_2["message"]
-          })
-        else
-          write_event({
-            session_id: session_id,
-            status: "completed",
-            message: response_1["message"]
-          })
+          response = openai.chat(messages)
+          loop_count += 1
         end
+
+        write_event({
+          session_id: session_id,
+          status: "completed",
+          message: response["message"]
+        })
 
       rescue => e
         Rails.logger.error("Chat streaming error: #{e.message}\n#{e.backtrace.join("\n")}")

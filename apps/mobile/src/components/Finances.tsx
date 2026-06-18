@@ -63,11 +63,26 @@ export const Finances: React.FC<FinancesProps> = ({ token }) => {
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Modal State
+  // Category Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [selectedIcon, setSelectedIcon] = useState('fastfood');
   const [isSubmittingCategory, setIsSubmittingCategory] = useState(false);
+
+  // Budget Modal State
+  const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
+  const [editBudgetAmount, setEditBudgetAmount] = useState('');
+  const [isSubmittingBudget, setIsSubmittingBudget] = useState(false);
+
+  // Expense Modal State
+  const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
+  const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
+  const [editExpenseDescription, setEditExpenseDescription] = useState('');
+  const [editExpenseAmount, setEditExpenseAmount] = useState('');
+  const [editExpenseDate, setEditExpenseDate] = useState('');
+  const [editExpenseCategory, setEditExpenseCategory] = useState<number | null>(null);
+  const [isSubmittingExpense, setIsSubmittingExpense] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -144,8 +159,69 @@ export const Finances: React.FC<FinancesProps> = ({ token }) => {
       await fetchData();
     } catch (error: any) {
       Alert.alert('Erro', error.message || 'Falha ao salvar a categoria.');
-    } finally {
       setIsSubmittingCategory(false);
+    }
+  };
+
+  const handleUpdateExpense = async () => {
+    if (!selectedExpense || !editExpenseAmount || !editExpenseDate) {
+      Alert.alert('Aviso', 'Preencha o valor e a data.');
+      return;
+    }
+
+    setIsSubmittingExpense(true);
+    try {
+      const res = await fetch(`${API_URL}/expenses/${selectedExpense.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          description: editExpenseDescription,
+          amount: parseFloat(editExpenseAmount.replace(',', '.')),
+          category_id: editExpenseCategory,
+          date: editExpenseDate,
+        }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Erro ao atualizar gasto.');
+      }
+
+      setIsExpenseModalOpen(false);
+      setIsLoading(true);
+      await fetchData();
+    } catch (error: any) {
+      Alert.alert('Erro', error.message || 'Falha ao atualizar.');
+    } finally {
+      setIsSubmittingExpense(false);
+    }
+  };
+
+  const confirmDeleteExpense = async () => {
+    setIsSubmittingExpense(true);
+    try {
+      const res = await fetch(`${API_URL}/expenses/${selectedExpense?.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        throw new Error('Erro ao excluir gasto.');
+      }
+
+      setIsExpenseModalOpen(false);
+      setIsLoading(true);
+      await fetchData();
+    } catch (error: any) {
+      Alert.alert('Erro', error.message || 'Falha ao excluir.');
+    } finally {
+      setIsSubmittingExpense(false);
+      setShowDeleteConfirm(false);
     }
   };
 
@@ -156,6 +232,47 @@ export const Finances: React.FC<FinancesProps> = ({ token }) => {
   // Budget for current month
   const activeBudget = budgets.find(b => b.date.startsWith(currentYearMonth));
   const budgetAmount = activeBudget ? parseFloat(activeBudget.amount) : 0;
+
+  const handleUpdateBudget = async () => {
+    if (!editBudgetAmount) {
+      Alert.alert('Aviso', 'Preencha o valor do orçamento.');
+      return;
+    }
+
+    setIsSubmittingBudget(true);
+    try {
+      const isUpdating = !!activeBudget;
+      const url = isUpdating 
+        ? `${API_URL}/budgets/${activeBudget.id}`
+        : `${API_URL}/budgets`;
+      const method = isUpdating ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          amount: parseFloat(editBudgetAmount.replace(',', '.')),
+          date: isUpdating ? activeBudget.date : `${currentYearMonth}-01`,
+        }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Erro ao salvar orçamento.');
+      }
+
+      setIsBudgetModalOpen(false);
+      setIsLoading(true);
+      await fetchData();
+    } catch (error: any) {
+      Alert.alert('Erro', error.message || 'Falha ao salvar orçamento.');
+    } finally {
+      setIsSubmittingBudget(false);
+    }
+  };
 
   // Expenses for current month
   const currentMonthExpenses = expenses.filter(e => e.date.startsWith(currentYearMonth));
@@ -184,7 +301,18 @@ export const Finances: React.FC<FinancesProps> = ({ token }) => {
           <View style={styles.summaryCard}>
             <View style={styles.summaryGrid}>
               <View style={styles.summaryItem}>
-                <Text style={styles.summaryLabel}>ORÇAMENTO</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Text style={styles.summaryLabel}>ORÇAMENTO</Text>
+                  <TouchableOpacity 
+                    style={{ marginLeft: 6 }} 
+                    onPress={() => {
+                      setEditBudgetAmount(budgetAmount > 0 ? budgetAmount.toFixed(2) : '');
+                      setIsBudgetModalOpen(true);
+                    }}
+                  >
+                    <MaterialIcons name="edit" size={12} color={theme.colors.primary} />
+                  </TouchableOpacity>
+                </View>
                 <Text style={styles.summaryValue}>R$ {budgetAmount.toFixed(2)}</Text>
               </View>
               <View style={styles.summaryItem}>
@@ -244,7 +372,20 @@ export const Finances: React.FC<FinancesProps> = ({ token }) => {
             expenses.map((expense) => {
               const category = categoriesMap[expense.category_id];
               return (
-                <View key={expense.id} style={styles.expenseCard}>
+                <TouchableOpacity
+                  key={expense.id}
+                  style={styles.expenseCard}
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    setSelectedExpense(expense);
+                    setEditExpenseDescription(expense.description || '');
+                    setEditExpenseAmount(parseFloat(expense.amount).toFixed(2));
+                    setEditExpenseDate(expense.date);
+                    setEditExpenseCategory(expense.category_id);
+                    setShowDeleteConfirm(false);
+                    setIsExpenseModalOpen(true);
+                  }}
+                >
                   <View style={[styles.iconContainer, { backgroundColor: category ? theme.colors.primaryContainer : '#2A2A2A' }]}>
                     <MaterialIcons
                       name={(category?.icon || 'attach-money') as any}
@@ -261,7 +402,7 @@ export const Finances: React.FC<FinancesProps> = ({ token }) => {
                   <Text style={styles.expenseAmount}>
                     - R$ {parseFloat(expense.amount).toFixed(2)}
                   </Text>
-                </View>
+                </TouchableOpacity>
               );
             })
           )}
@@ -327,6 +468,198 @@ export const Finances: React.FC<FinancesProps> = ({ token }) => {
                 disabled={isSubmittingCategory}
               >
                 {isSubmittingCategory ? (
+                  <ActivityIndicator size="small" color="#0A0A0A" />
+                ) : (
+                  <Text style={styles.submitButtonText}>SALVAR</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Expense Modal */}
+      <Modal
+        visible={isExpenseModalOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsExpenseModalOpen(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Editar Gasto 📝</Text>
+
+            <Text style={styles.inputLabel}>DESCRIÇÃO</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Ex: Lanche"
+              placeholderTextColor="#555"
+              value={editExpenseDescription}
+              onChangeText={setEditExpenseDescription}
+            />
+
+            <View style={{ flexDirection: 'row', gap: 16 }}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.inputLabel}>VALOR (R$)</Text>
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="0.00"
+                  placeholderTextColor="#555"
+                  value={editExpenseAmount}
+                  onChangeText={setEditExpenseAmount}
+                  keyboardType="numeric"
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.inputLabel}>DATA</Text>
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="YYYY-MM-DD"
+                  placeholderTextColor="#555"
+                  value={editExpenseDate}
+                  onChangeText={setEditExpenseDate}
+                />
+              </View>
+            </View>
+
+            <Text style={styles.inputLabel}>CATEGORIA</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.categoriesScrollModal}
+              contentContainerStyle={{ paddingRight: 16, paddingBottom: 24 }}
+            >
+              {categories.map((category) => {
+                const isSelected = editExpenseCategory === category.id;
+                return (
+                  <TouchableOpacity
+                    key={category.id}
+                    style={[
+                      styles.categoryBadgeModal,
+                      isSelected && styles.categoryBadgeModalSelected,
+                    ]}
+                    onPress={() => setEditExpenseCategory(category.id)}
+                  >
+                    <MaterialIcons
+                      name={category.icon as any}
+                      size={16}
+                      color={isSelected ? theme.colors.onPrimary : theme.colors.onPrimaryContainer}
+                      style={{ marginRight: 6 }}
+                    />
+                    <Text
+                      style={[
+                        styles.categoryBadgeTextModal,
+                        isSelected && { color: theme.colors.onPrimary },
+                      ]}
+                    >
+                      {category.name}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+
+            {showDeleteConfirm ? (
+              <View style={[styles.modalActions, { justifyContent: 'space-between', backgroundColor: '#2A0808', padding: 8, borderRadius: 8, alignItems: 'center' }]}>
+                <Text style={{ color: '#FF6B6B', fontFamily: theme.fonts.medium, fontSize: 12, marginLeft: 8 }}>
+                  Excluir mesmo?
+                </Text>
+                <View style={{ flexDirection: 'row' }}>
+                  <TouchableOpacity
+                    style={styles.cancelButton}
+                    onPress={() => setShowDeleteConfirm(false)}
+                    disabled={isSubmittingExpense}
+                  >
+                    <Text style={styles.cancelButtonText}>NÃO</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.submitButton, { backgroundColor: '#FF6B6B' }]}
+                    onPress={confirmDeleteExpense}
+                    disabled={isSubmittingExpense}
+                  >
+                    {isSubmittingExpense ? (
+                      <ActivityIndicator size="small" color="#0A0A0A" />
+                    ) : (
+                      <Text style={styles.submitButtonText}>SIM</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : (
+              <View style={[styles.modalActions, { justifyContent: 'space-between' }]}>
+                <TouchableOpacity
+                  style={styles.deleteButton}
+                  onPress={() => setShowDeleteConfirm(true)}
+                  disabled={isSubmittingExpense}
+                >
+                  <MaterialIcons name="delete-outline" size={20} color="#FF6B6B" />
+                </TouchableOpacity>
+
+                <View style={{ flexDirection: 'row' }}>
+                  <TouchableOpacity
+                    style={styles.cancelButton}
+                    onPress={() => setIsExpenseModalOpen(false)}
+                    disabled={isSubmittingExpense}
+                  >
+                    <Text style={styles.cancelButtonText}>CANCELAR</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.submitButton}
+                    onPress={handleUpdateExpense}
+                    disabled={isSubmittingExpense}
+                  >
+                    {isSubmittingExpense ? (
+                      <ActivityIndicator size="small" color="#0A0A0A" />
+                    ) : (
+                      <Text style={styles.submitButtonText}>SALVAR</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* Budget Modal */}
+      <Modal
+        visible={isBudgetModalOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsBudgetModalOpen(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Meu Orçamento 💰</Text>
+
+            <Text style={styles.inputLabel}>QUAL O SEU ORÇAMENTO MENSAL? (R$)</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Ex: 3500.00"
+              placeholderTextColor="#555"
+              value={editBudgetAmount}
+              onChangeText={setEditBudgetAmount}
+              keyboardType="numeric"
+              autoFocus
+            />
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => setIsBudgetModalOpen(false)}
+                disabled={isSubmittingBudget}
+              >
+                <Text style={styles.cancelButtonText}>CANCELAR</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.submitButton}
+                onPress={handleUpdateBudget}
+                disabled={isSubmittingBudget}
+              >
+                {isSubmittingBudget ? (
                   <ActivityIndicator size="small" color="#0A0A0A" />
                 ) : (
                   <Text style={styles.submitButtonText}>SALVAR</Text>
@@ -609,5 +942,33 @@ const styles = StyleSheet.create({
     color: '#0A0A0A',
     fontSize: 12,
     letterSpacing: 1,
+  },
+  deleteButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  categoriesScrollModal: {
+    maxHeight: 50,
+  },
+  categoryBadgeModal: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.primaryContainer,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 16,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  categoryBadgeModalSelected: {
+    backgroundColor: theme.colors.primary,
+  },
+  categoryBadgeTextModal: {
+    fontFamily: theme.fonts.medium,
+    fontSize: 12,
+    color: theme.colors.onPrimaryContainer,
   },
 });
