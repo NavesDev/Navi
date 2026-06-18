@@ -359,6 +359,31 @@ export const Finances: React.FC<FinancesProps> = ({ token, visible }) => {
       return;
     }
 
+    if (budgetAmount <= 0) {
+      Alert.alert('Orçamento Ausente', 'Por favor, defina o seu orçamento mensal total antes de configurar metas por categoria.');
+      return;
+    }
+
+    if (parsedAmount > budgetAmount) {
+      Alert.alert('Meta Inválida', `O valor da meta (R$ ${parsedAmount.toFixed(2)}) não pode ser maior do que o orçamento mensal total (R$ ${budgetAmount.toFixed(2)}).`);
+      return;
+    }
+
+    const otherBudgetsSum = categoryBudgets
+      .filter((cb) => cb.category_id !== selectedCategoryForBudget.id)
+      .reduce((sum, cb) => sum + parseFloat(cb.amount), 0);
+
+    if (otherBudgetsSum + parsedAmount > budgetAmount) {
+      const availableLimit = budgetAmount - otherBudgetsSum;
+      Alert.alert(
+        'Limite Excedido',
+        `A soma das metas das categorias não pode ultrapassar o orçamento mensal total de R$ ${budgetAmount.toFixed(2)}.\n\n` +
+        `Soma das outras metas: R$ ${otherBudgetsSum.toFixed(2)}\n` +
+        `Limite disponível: R$ ${Math.max(0, availableLimit).toFixed(2)}`
+      );
+      return;
+    }
+
     setIsSubmittingCategoryBudget(true);
     try {
       const isUpdating = !!selectedCategoryBudget;
