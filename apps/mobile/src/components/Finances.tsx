@@ -83,7 +83,6 @@ export const Finances: React.FC<FinancesProps> = ({ token, visible }) => {
   const [categoryBudgetAmount, setCategoryBudgetAmount] = useState('');
   const [isSubmittingCategoryBudget, setIsSubmittingCategoryBudget] = useState(false);
   const [showDeleteCategoryBudgetConfirm, setShowDeleteCategoryBudgetConfirm] = useState(false);
-  const [showAllCategoryBudgets, setShowAllCategoryBudgets] = useState(false);
 
   // Category Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -551,8 +550,12 @@ export const Finances: React.FC<FinancesProps> = ({ token, visible }) => {
               <Text style={styles.emptyText}>Crie categorias acima para definir metas.</Text>
             </View>
           ) : (
-            <View style={{ paddingHorizontal: 24 }}>
-              {(showAllCategoryBudgets ? categories : categories.slice(0, 4)).map((category) => {
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.categoryBudgetsScrollContent}
+            >
+              {categories.map((category) => {
                 const spent = currentMonthExpenses
                   .filter((e) => e.category_id === category.id)
                   .reduce((acc, curr) => acc + parseFloat(curr.amount || '0'), 0);
@@ -575,11 +578,11 @@ export const Finances: React.FC<FinancesProps> = ({ token, visible }) => {
                     }}
                   >
                     <View style={styles.categoryCardHeader}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 8 }}>
                         <View style={[styles.iconContainerSmall, { backgroundColor: theme.colors.primaryContainer }]}>
                           <MaterialIcons name={category.icon as any} size={16} color={theme.colors.onPrimaryContainer} />
                         </View>
-                        <Text style={styles.categoryCardName}>{category.name}</Text>
+                        <Text style={styles.categoryCardName} numberOfLines={1}>{category.name}</Text>
                       </View>
                       <Text style={styles.categoryCardBudgetLabel}>
                         {hasBudget ? `Meta: R$ ${budgetAmount.toFixed(2)}` : 'Sem Meta'}
@@ -612,29 +615,12 @@ export const Finances: React.FC<FinancesProps> = ({ token, visible }) => {
                         </View>
                       </View>
                     ) : (
-                      <Text style={styles.setupBudgetHelperText}>Tocar para configurar meta mensal</Text>
+                      <Text style={styles.setupBudgetHelperText}>Tocar para configurar meta</Text>
                     )}
                   </TouchableOpacity>
                 );
               })}
-
-              {categories.length > 4 && (
-                <TouchableOpacity
-                  style={styles.expandButton}
-                  onPress={() => setShowAllCategoryBudgets(!showAllCategoryBudgets)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.expandButtonText}>
-                    {showAllCategoryBudgets ? 'Mostrar Menos' : `Ver Mais (+${categories.length - 4})`}
-                  </Text>
-                  <MaterialIcons
-                    name={showAllCategoryBudgets ? 'keyboard-arrow-up' : 'keyboard-arrow-down'}
-                    size={20}
-                    color={theme.colors.primary}
-                  />
-                </TouchableOpacity>
-              )}
-            </View>
+            </ScrollView>
           )}
 
           {/* SECTION 4: Histórico de Gastos */}
@@ -1486,12 +1472,17 @@ const styles = StyleSheet.create({
     zIndex: 99,
   },
   categoryCard: {
+    width: 280,
     backgroundColor: theme.colors.surface,
     borderWidth: 1,
     borderColor: '#2A2A2A',
     borderRadius: theme.rounded.soft,
     padding: 16,
-    marginBottom: 12,
+    marginRight: 16,
+  },
+  categoryBudgetsScrollContent: {
+    paddingHorizontal: 24,
+    paddingBottom: 16,
   },
   categoryCardHeader: {
     flexDirection: 'row',
@@ -1550,23 +1541,5 @@ const styles = StyleSheet.create({
     color: '#8C8C8C',
     marginTop: 8,
     fontStyle: 'italic',
-  },
-  expandButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: '#2A2A2A',
-    borderRadius: theme.rounded.soft,
-    backgroundColor: '#111111',
-    marginTop: 4,
-    marginBottom: 16,
-  },
-  expandButtonText: {
-    fontFamily: theme.fonts.medium,
-    fontSize: 13,
-    color: theme.colors.primary,
-    marginRight: 6,
   },
 });
