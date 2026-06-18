@@ -93,7 +93,7 @@ export default function App() {
                 <Chat token={userToken} />
               </View>
               <View style={{ flex: 1, display: activeTab === 'finances' ? 'flex' : 'none' }}>
-                <Finances token={userToken} />
+                <Finances token={userToken} visible={activeTab === 'finances'} />
               </View>
               <View style={{ flex: 1, display: activeTab === 'routines' ? 'flex' : 'none' }}>
                 <Routines token={userToken} />

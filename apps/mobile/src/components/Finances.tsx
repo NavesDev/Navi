@@ -17,6 +17,7 @@ import { theme } from '../styles/theme';
 
 interface FinancesProps {
   token: string;
+  visible?: boolean;
 }
 
 interface Category {
@@ -56,7 +57,7 @@ const AVAILABLE_ICONS = [
   'star',
 ];
 
-export const Finances: React.FC<FinancesProps> = ({ token }) => {
+export const Finances: React.FC<FinancesProps> = ({ token, visible }) => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesMap, setCategoriesMap] = useState<Record<number, Category>>({});
@@ -121,8 +122,10 @@ export const Finances: React.FC<FinancesProps> = ({ token }) => {
   };
 
   useEffect(() => {
-    fetchData();
-  }, [token]);
+    if (visible || visible === undefined) {
+      fetchData();
+    }
+  }, [token, visible]);
 
   const handleCreateCategory = async () => {
     if (!newCategoryName.trim()) {
