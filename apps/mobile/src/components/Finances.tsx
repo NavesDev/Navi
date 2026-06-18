@@ -42,6 +42,14 @@ interface Budget {
   amount: string;
 }
 
+interface CategoryBudget {
+  id: number;
+  user_id: number;
+  category_id: number;
+  amount: string;
+  date: string;
+}
+
 const AVAILABLE_ICONS = [
   'fastfood',
   'directions-car',
@@ -58,11 +66,23 @@ const AVAILABLE_ICONS = [
 ];
 
 export const Finances: React.FC<FinancesProps> = ({ token, visible }) => {
+  const now = new Date();
+  const currentYearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesMap, setCategoriesMap] = useState<Record<number, Category>>({});
   const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [categoryBudgets, setCategoryBudgets] = useState<CategoryBudget[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Category Budget Modal State
+  const [isCategoryBudgetModalOpen, setIsCategoryBudgetModalOpen] = useState(false);
+  const [selectedCategoryForBudget, setSelectedCategoryForBudget] = useState<Category | null>(null);
+  const [selectedCategoryBudget, setSelectedCategoryBudget] = useState<CategoryBudget | null>(null);
+  const [categoryBudgetAmount, setCategoryBudgetAmount] = useState('');
+  const [isSubmittingCategoryBudget, setIsSubmittingCategoryBudget] = useState(false);
+  const [showDeleteCategoryBudgetConfirm, setShowDeleteCategoryBudgetConfirm] = useState(false);
 
   // Category Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -121,6 +141,15 @@ export const Finances: React.FC<FinancesProps> = ({ token, visible }) => {
       });
       const budgetsData: Budget[] = await budgetRes.json();
       setBudgets(budgetsData);
+
+      // Fetch Category Budgets
+      const catBudgetRes = await fetch(`${API_URL}/category_budgets?date=${currentYearMonth}-01`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (catBudgetRes.ok) {
+        const catBudgetsData: CategoryBudget[] = await catBudgetRes.json();
+        setCategoryBudgets(catBudgetsData);
+      }
     } catch (error) {
       console.error('Failed to fetch financial data:', error);
       Alert.alert('Erro', 'Não foi possível carregar os dados financeiros.');
@@ -273,10 +302,6 @@ export const Finances: React.FC<FinancesProps> = ({ token, visible }) => {
     }
   };
 
-  // Calculations for current month (YYYY-MM)
-  const now = new Date();
-  const currentYearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`; // "YYYY-MM"
-
   // Budget for current month
   const activeBudget = budgets.find(b => b.date.startsWith(currentYearMonth));
   const budgetAmount = activeBudget ? parseFloat(activeBudget.amount) : 0;
@@ -319,6 +344,89 @@ export const Finances: React.FC<FinancesProps> = ({ token, visible }) => {
       Alert.alert('Erro', error.message || 'Falha ao salvar orçamento.');
     } finally {
       setIsSubmittingBudget(false);
+    }
+  };
+
+  const handleSaveCategoryBudget = async () => {
+    if (!selectedCategoryForBudget || !categoryBudgetAmount.trim()) {
+      Alert.alert('Aviso', 'Preencha o valor da meta.');
+      return;
+    }
+
+    const parsedAmount = parseFloat(categoryBudgetAmount.replace(',', '.'));
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      Alert.alert('Aviso', 'Por favor, insira um valor maior que 0.');
+      return;
+    }
+
+    setIsSubmittingCategoryBudget(true);
+    try {
+      const isUpdating = !!selectedCategoryBudget;
+      const url = isUpdating
+        ? `${API_URL}/category_budgets/${selectedCategoryBudget.id}`
+        : `${API_URL}/category_budgets`;
+      const method = isUpdating ? 'PUT' : 'POST';
+
+      const body = isUpdating
+        ? { category_budget: { amount: parsedAmount } }
+        : {
+            category_budget: {
+              category_id: selectedCategoryForBudget.id,
+              amount: parsedAmount,
+              date: `${currentYearMonth}-01`,
+            },
+          };
+
+      const res = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Erro ao salvar a meta da categoria.');
+      }
+
+      Alert.alert('Sucesso', 'Meta de categoria salva com sucesso!');
+      setIsCategoryBudgetModalOpen(false);
+      setIsLoading(true);
+      await fetchData();
+    } catch (error: any) {
+      Alert.alert('Erro', error.message || 'Falha ao salvar meta de categoria.');
+    } finally {
+      setIsSubmittingCategoryBudget(false);
+    }
+  };
+
+  const handleDeleteCategoryBudget = async () => {
+    if (!selectedCategoryBudget) return;
+
+    setIsSubmittingCategoryBudget(true);
+    try {
+      const res = await fetch(`${API_URL}/category_budgets/${selectedCategoryBudget.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        throw new Error('Erro ao excluir a meta da categoria.');
+      }
+
+      Alert.alert('Sucesso', 'Meta de categoria removida com sucesso!');
+      setIsCategoryBudgetModalOpen(false);
+      setIsLoading(true);
+      await fetchData();
+    } catch (error: any) {
+      Alert.alert('Erro', error.message || 'Falha ao excluir meta de categoria.');
+    } finally {
+      setIsSubmittingCategoryBudget(false);
+      setShowDeleteCategoryBudgetConfirm(false);
     }
   };
 
@@ -407,7 +515,79 @@ export const Finances: React.FC<FinancesProps> = ({ token, visible }) => {
             ))}
           </ScrollView>
 
-          {/* SECTION 3: Histórico de Gastos */}
+          {/* SECTION 3: Metas por Categoria */}
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Metas por Categoria</Text>
+          </View>
+
+          {categories.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>Crie categorias acima para definir metas.</Text>
+            </View>
+          ) : (
+            <View style={{ paddingHorizontal: 24 }}>
+              {categories.map((category) => {
+                const spent = currentMonthExpenses
+                  .filter((e) => e.category_id === category.id)
+                  .reduce((acc, curr) => acc + parseFloat(curr.amount || '0'), 0);
+                const budget = categoryBudgets.find((cb) => cb.category_id === category.id);
+                const budgetAmount = budget ? parseFloat(budget.amount) : 0;
+                const hasBudget = budgetAmount > 0;
+                const percentage = hasBudget ? (spent / budgetAmount) * 100 : 0;
+
+                return (
+                  <TouchableOpacity
+                    key={category.id}
+                    style={styles.categoryCard}
+                    activeOpacity={0.7}
+                    onPress={() => {
+                      setSelectedCategoryForBudget(category);
+                      setSelectedCategoryBudget(budget || null);
+                      setCategoryBudgetAmount(budget ? parseFloat(budget.amount).toFixed(2) : '');
+                      setShowDeleteCategoryBudgetConfirm(false);
+                      setIsCategoryBudgetModalOpen(true);
+                    }}
+                  >
+                    <View style={styles.categoryCardHeader}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <View style={[styles.iconContainerSmall, { backgroundColor: theme.colors.primaryContainer }]}>
+                          <MaterialIcons name={category.icon as any} size={16} color={theme.colors.onPrimaryContainer} />
+                        </View>
+                        <Text style={styles.categoryCardName}>{category.name}</Text>
+                      </View>
+                      <Text style={styles.categoryCardBudgetLabel}>
+                        {hasBudget ? `Meta: R$ ${budgetAmount.toFixed(2)}` : 'Sem Meta'}
+                      </Text>
+                    </View>
+
+                    {hasBudget ? (
+                      <View style={styles.progressContainer}>
+                        <View style={styles.progressBarBackground}>
+                          <View
+                            style={[
+                              styles.progressBarFill,
+                              {
+                                width: `${Math.min(percentage, 100)}%`,
+                                backgroundColor: percentage > 100 ? '#FF6B6B' : percentage > 70 ? '#FFA502' : '#6BCB77',
+                              },
+                            ]}
+                          />
+                        </View>
+                        <View style={styles.progressTextRow}>
+                          <Text style={styles.progressSpentText}>Gasto: R$ {spent.toFixed(2)}</Text>
+                          <Text style={styles.progressPercentText}>{percentage.toFixed(0)}%</Text>
+                        </View>
+                      </View>
+                    ) : (
+                      <Text style={styles.setupBudgetHelperText}>Tocar para configurar meta mensal</Text>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
+
+          {/* SECTION 4: Histórico de Gastos */}
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Histórico de Transações</Text>
           </View>
@@ -827,6 +1007,99 @@ export const Finances: React.FC<FinancesProps> = ({ token, visible }) => {
         </View>
       </Modal>
 
+      {/* Category Budget Modal */}
+      <Modal
+        visible={isCategoryBudgetModalOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsCategoryBudgetModalOpen(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>
+              Meta de Gasto 🌌{'\n'}
+              <Text style={{ fontSize: 14, color: theme.colors.secondary, fontFamily: theme.fonts.body }}>
+                Categoria: {selectedCategoryForBudget?.name}
+              </Text>
+            </Text>
+
+            <Text style={styles.inputLabel}>VALOR LIMITE MENSAL (R$)</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Ex: 500.00"
+              placeholderTextColor="#555"
+              value={categoryBudgetAmount}
+              onChangeText={setCategoryBudgetAmount}
+              keyboardType="numeric"
+              autoFocus
+            />
+
+            {selectedCategoryBudget && showDeleteCategoryBudgetConfirm ? (
+              <View style={[styles.modalActions, { justifyContent: 'space-between', backgroundColor: '#2A0808', padding: 8, borderRadius: 8, alignItems: 'center', marginTop: 16 }]}>
+                <Text style={{ color: '#FF6B6B', fontFamily: theme.fonts.medium, fontSize: 12, marginLeft: 8 }}>
+                  Remover meta mesmo?
+                </Text>
+                <View style={{ flexDirection: 'row' }}>
+                  <TouchableOpacity
+                    style={styles.cancelButton}
+                    onPress={() => setShowDeleteCategoryBudgetConfirm(false)}
+                    disabled={isSubmittingCategoryBudget}
+                  >
+                    <Text style={styles.cancelButtonText}>NÃO</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.submitButton, { backgroundColor: '#FF6B6B' }]}
+                    onPress={handleDeleteCategoryBudget}
+                    disabled={isSubmittingCategoryBudget}
+                  >
+                    {isSubmittingCategoryBudget ? (
+                      <ActivityIndicator size="small" color="#0A0A0A" />
+                    ) : (
+                      <Text style={styles.submitButtonText}>SIM</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : (
+              <View style={[styles.modalActions, { justifyContent: selectedCategoryBudget ? 'space-between' : 'flex-end', marginTop: 16 }]}>
+                {selectedCategoryBudget && (
+                  <TouchableOpacity
+                    style={styles.deleteButton}
+                    onPress={() => setShowDeleteCategoryBudgetConfirm(true)}
+                    disabled={isSubmittingCategoryBudget}
+                  >
+                    <MaterialIcons name="delete-outline" size={20} color="#FF6B6B" />
+                  </TouchableOpacity>
+                )}
+
+                <View style={{ flexDirection: 'row' }}>
+                  <TouchableOpacity
+                    style={styles.cancelButton}
+                    onPress={() => setIsCategoryBudgetModalOpen(false)}
+                    disabled={isSubmittingCategoryBudget}
+                  >
+                    <Text style={styles.cancelButtonText}>CANCELAR</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.submitButton}
+                    onPress={handleSaveCategoryBudget}
+                    disabled={isSubmittingCategoryBudget}
+                  >
+                    {isSubmittingCategoryBudget ? (
+                      <ActivityIndicator size="small" color="#0A0A0A" />
+                    ) : (
+                      <Text style={styles.submitButtonText}>SALVAR</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+          </View>
+        </View>
+      </Modal>
+
       {/* Floating Action Button */}
       <TouchableOpacity
         onPress={() => {
@@ -1161,5 +1434,71 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 4,
     zIndex: 99,
+  },
+  categoryCard: {
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: '#2A2A2A',
+    borderRadius: theme.rounded.soft,
+    padding: 16,
+    marginBottom: 12,
+  },
+  categoryCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  iconContainerSmall: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  categoryCardName: {
+    fontFamily: theme.fonts.semibold,
+    fontSize: 14,
+    color: theme.colors.onSurface,
+  },
+  categoryCardBudgetLabel: {
+    fontFamily: theme.fonts.medium,
+    fontSize: 12,
+    color: theme.colors.primary,
+  },
+  progressContainer: {
+    marginTop: 12,
+  },
+  progressBarBackground: {
+    height: 6,
+    backgroundColor: '#2D2D2D',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  progressTextRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 6,
+  },
+  progressSpentText: {
+    fontFamily: theme.fonts.body,
+    fontSize: 11,
+    color: theme.colors.secondary,
+  },
+  progressPercentText: {
+    fontFamily: theme.fonts.semibold,
+    fontSize: 11,
+    color: theme.colors.secondary,
+  },
+  setupBudgetHelperText: {
+    fontFamily: theme.fonts.body,
+    fontSize: 12,
+    color: '#8C8C8C',
+    marginTop: 8,
+    fontStyle: 'italic',
   },
 });
