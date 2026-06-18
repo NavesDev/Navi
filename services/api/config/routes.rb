@@ -11,6 +11,7 @@ Rails.application.routes.draw do
       resources :categories
       resources :expenses
       resources :budgets
+      resources :category_budgets, only: [:index, :create, :update, :destroy]
       post "chat", to: "chat#create"
     end
   end

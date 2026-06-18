@@ -36,8 +36,11 @@ module Api
 
       # DELETE /api/v1/categories/:id
       def destroy
-        @category.destroy
-        head :no_content
+        if @category.destroy
+          head :no_content
+        else
+          render json: { error: @category.errors.full_messages.join(', ') }, status: :unprocessable_entity
+        end
       end
 
       private

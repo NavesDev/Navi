@@ -9,6 +9,8 @@ class Api::V1::CategoriesTest < ActionDispatch::IntegrationTest
     
     @user_category = categories(:one)
     @other_category = categories(:two)
+    budgets(:one).update!(amount: 1000.00)
+    CategoryBudget.destroy_all
   end
 
   test "should list all categories of the authenticated user and exclude user_id" do
@@ -132,5 +134,23 @@ class Api::V1::CategoriesTest < ActionDispatch::IntegrationTest
 
     # Assert
     assert_response :not_found
+  end
+
+  test "should return unprocessable entity when deleting category with active budget meta" do
+    # Arrange
+    CategoryBudget.create!(
+      user: @user,
+      category: @user_category,
+      amount: 150.00,
+      date: "2026-06-01"
+    )
+
+    # Act
+    delete "/api/v1/categories/#{@user_category.id}", headers: @headers
+
+    # Assert
+    assert_response :unprocessable_entity
+    json_response = JSON.parse(response.body)
+    assert_match /Cannot delete record because dependent category budgets exist/i, json_response["error"]
   end
 end
