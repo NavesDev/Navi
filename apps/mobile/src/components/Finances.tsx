@@ -568,7 +568,14 @@ export const Finances: React.FC<FinancesProps> = ({ token, visible }) => {
                               styles.progressBarFill,
                               {
                                 width: `${Math.min(percentage, 100)}%`,
-                                backgroundColor: percentage > 100 ? '#FF6B6B' : percentage > 70 ? '#FFA502' : '#6BCB77',
+                                backgroundColor:
+                                  percentage > 100
+                                    ? '#FF6B6B'
+                                    : percentage >= 70
+                                    ? '#FFA502'
+                                    : percentage >= 40
+                                    ? '#FFD25A'
+                                    : '#6BCB77',
                               },
                             ]}
                           />
