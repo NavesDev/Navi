@@ -1,6 +1,7 @@
 class Category < ApplicationRecord
   belongs_to :user
   has_many :expenses, dependent: :destroy
+  has_many :category_budgets, dependent: :restrict_with_error
 
   validates :name, presence: true, uniqueness: { scope: :user_id }
   validates :slug, presence: true, uniqueness: { scope: :user_id }
