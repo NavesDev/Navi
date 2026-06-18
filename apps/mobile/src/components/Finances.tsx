@@ -15,7 +15,7 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const PAGE_WIDTH = SCREEN_WIDTH - 48;
+const PAGE_WIDTH = SCREEN_WIDTH;
 import { API_URL } from '../services/auth';
 import { theme } from '../styles/theme';
 
@@ -1524,11 +1524,11 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   categoryBudgetsScrollContent: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 0,
     paddingBottom: 4,
   },
   categoryPage: {
-    paddingRight: 16,
+    paddingHorizontal: 24,
   },
   paginationDotsContainer: {
     flexDirection: 'row',
