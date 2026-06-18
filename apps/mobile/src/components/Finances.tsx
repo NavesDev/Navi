@@ -85,6 +85,14 @@ export const Finances: React.FC<FinancesProps> = ({ token, visible }) => {
   const [isSubmittingExpense, setIsSubmittingExpense] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
+  // Create Expense Modal State
+  const [isCreateExpenseModalOpen, setIsCreateExpenseModalOpen] = useState(false);
+  const [newExpenseDescription, setNewExpenseDescription] = useState('');
+  const [newExpenseAmount, setNewExpenseAmount] = useState('');
+  const [newExpenseDate, setNewExpenseDate] = useState('');
+  const [newExpenseCategory, setNewExpenseCategory] = useState<number | null>(null);
+  const [isSubmittingNewExpense, setIsSubmittingNewExpense] = useState(false);
+
   const fetchData = async () => {
     try {
       // Fetch Categories
@@ -228,6 +236,43 @@ export const Finances: React.FC<FinancesProps> = ({ token, visible }) => {
     }
   };
 
+  const handleCreateExpense = async () => {
+    if (!newExpenseAmount || !newExpenseDate || !newExpenseCategory) {
+      Alert.alert('Aviso', 'Preencha o valor, a data e a categoria.');
+      return;
+    }
+
+    setIsSubmittingNewExpense(true);
+    try {
+      const res = await fetch(`${API_URL}/expenses`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          description: newExpenseDescription,
+          amount: parseFloat(newExpenseAmount.replace(',', '.')),
+          category_id: newExpenseCategory,
+          date: newExpenseDate,
+        }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Erro ao criar gasto.');
+      }
+
+      setIsCreateExpenseModalOpen(false);
+      setIsLoading(true);
+      await fetchData();
+    } catch (error: any) {
+      Alert.alert('Erro', error.message || 'Falha ao criar gasto.');
+    } finally {
+      setIsSubmittingNewExpense(false);
+    }
+  };
+
   // Calculations for current month (YYYY-MM)
   const now = new Date();
   const currentYearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`; // "YYYY-MM"
@@ -294,7 +339,8 @@ export const Finances: React.FC<FinancesProps> = ({ token, visible }) => {
       {isLoading ? (
         <ActivityIndicator size="large" color={theme.colors.primary} style={styles.loader} />
       ) : (
-        <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
+        <>
+          <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
           
           {/* SECTION 1: Resumo / Saldo */}
           <View style={styles.sectionHeader}>
@@ -410,7 +456,8 @@ export const Finances: React.FC<FinancesProps> = ({ token, visible }) => {
             })
           )}
         </ScrollView>
-      )}
+      </>
+    )}
 
       {/* Add Category Modal */}
       <Modal
@@ -672,6 +719,128 @@ export const Finances: React.FC<FinancesProps> = ({ token, visible }) => {
           </View>
         </View>
       </Modal>
+
+      {/* Create Expense Modal */}
+      <Modal
+        visible={isCreateExpenseModalOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsCreateExpenseModalOpen(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Novo Gasto 💸</Text>
+
+            <Text style={styles.inputLabel}>DESCRIÇÃO</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Ex: Lanche no Mac"
+              placeholderTextColor="#555"
+              value={newExpenseDescription}
+              onChangeText={setNewExpenseDescription}
+              autoFocus
+            />
+
+            <View style={{ flexDirection: 'row', gap: 16 }}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.inputLabel}>VALOR (R$)</Text>
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="0.00"
+                  placeholderTextColor="#555"
+                  value={newExpenseAmount}
+                  onChangeText={setNewExpenseAmount}
+                  keyboardType="numeric"
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.inputLabel}>DATA</Text>
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="YYYY-MM-DD"
+                  placeholderTextColor="#555"
+                  value={newExpenseDate}
+                  onChangeText={setNewExpenseDate}
+                />
+              </View>
+            </View>
+
+            <Text style={styles.inputLabel}>CATEGORIA</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.categoriesScrollModal}
+              contentContainerStyle={{ paddingRight: 16, paddingBottom: 24 }}
+            >
+              {categories.map((category) => {
+                const isSelected = newExpenseCategory === category.id;
+                return (
+                  <TouchableOpacity
+                    key={category.id}
+                    style={[
+                      styles.categoryBadgeModal,
+                      isSelected && styles.categoryBadgeModalSelected,
+                    ]}
+                    onPress={() => setNewExpenseCategory(category.id)}
+                  >
+                    <MaterialIcons
+                      name={category.icon as any}
+                      size={16}
+                      color={isSelected ? theme.colors.onPrimary : theme.colors.onPrimaryContainer}
+                      style={{ marginRight: 6 }}
+                    />
+                    <Text
+                      style={[
+                        styles.categoryBadgeTextModal,
+                        isSelected && { color: theme.colors.onPrimary },
+                      ]}
+                    >
+                      {category.name}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => setIsCreateExpenseModalOpen(false)}
+                disabled={isSubmittingNewExpense}
+              >
+                <Text style={styles.cancelButtonText}>CANCELAR</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.submitButton}
+                onPress={handleCreateExpense}
+                disabled={isSubmittingNewExpense}
+              >
+                {isSubmittingNewExpense ? (
+                  <ActivityIndicator size="small" color="#0A0A0A" />
+                ) : (
+                  <Text style={styles.submitButtonText}>ADICIONAR</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Floating Action Button */}
+      <TouchableOpacity
+        onPress={() => {
+          setNewExpenseDescription('');
+          setNewExpenseAmount('');
+          setNewExpenseDate(new Date().toISOString().split('T')[0]);
+          setNewExpenseCategory(categories[0]?.id || null);
+          setIsCreateExpenseModalOpen(true);
+        }}
+        style={styles.fab}
+        activeOpacity={0.8}
+      >
+        <MaterialIcons name="add" size={28} color="#0A0A0A" />
+      </TouchableOpacity>
     </SafeAreaView>
   );
 };
@@ -697,7 +866,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    paddingBottom: 40,
+    paddingBottom: 100,
   },
   loader: {
     marginTop: 40,
@@ -886,13 +1055,15 @@ const styles = StyleSheet.create({
   },
   textInput: {
     height: 48,
-    borderBottomWidth: 1,
-    borderBottomColor: '#2A2A2A',
+    backgroundColor: '#0F0F0F',
+    borderWidth: 1,
+    borderColor: '#2A2A2A',
+    borderRadius: 8,
     color: theme.colors.onSurface,
     fontFamily: theme.fonts.body,
-    fontSize: 16,
-    paddingVertical: 8,
-    marginBottom: 24,
+    fontSize: 15,
+    paddingHorizontal: 12,
+    marginBottom: 20,
   },
   iconsGrid: {
     flexDirection: 'row',
@@ -973,5 +1144,22 @@ const styles = StyleSheet.create({
     fontFamily: theme.fonts.medium,
     fontSize: 12,
     color: theme.colors.onPrimaryContainer,
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 24,
+    right: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: theme.colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    zIndex: 99,
   },
 });
