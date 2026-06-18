@@ -14,6 +14,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
 import { chatStyles as styles } from '../styles/chatStyles';
 import { useChatStream } from '../hooks/useChatStream';
+import { MarkdownRenderer } from './MarkdownRenderer';
 
 interface ChatProps {
   token: string;
@@ -115,14 +116,7 @@ export const Chat: React.FC<ChatProps> = ({ token, onLogout }) => {
                     style={{ marginRight: 6, marginBottom: 4 }}
                   />
                 )}
-                <Text
-                  style={[
-                    styles.messageText,
-                    isUser ? styles.userText : styles.aiText,
-                  ]}
-                >
-                  {msg.text}
-                </Text>
+                <MarkdownRenderer text={msg.text} isUser={isUser} />
               </View>
             </View>
           );
