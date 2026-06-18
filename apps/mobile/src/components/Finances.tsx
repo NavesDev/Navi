@@ -642,6 +642,24 @@ export const Finances: React.FC<FinancesProps> = ({ token, visible }) => {
                           </TouchableOpacity>
                         );
                       })}
+
+                      {Array.from({ length: 4 - pageCategories.length }).map((_, idx) => (
+                        <View key={`placeholder-${idx}`} style={[styles.categoryCard, { opacity: 0 }]} pointerEvents="none">
+                          <View style={styles.categoryCardHeader}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                              <View style={styles.iconContainerSmall} />
+                              <Text style={styles.categoryCardName}>Placeholder</Text>
+                            </View>
+                            <Text style={styles.categoryCardBudgetLabel}>Placeholder</Text>
+                          </View>
+                          <View style={styles.progressContainer}>
+                            <View style={styles.progressBarBackground} />
+                            <View style={styles.progressTextRow}>
+                              <Text style={styles.progressSpentText}>Placeholder</Text>
+                            </View>
+                          </View>
+                        </View>
+                      ))}
                     </View>
                   ))}
                 </Animated.ScrollView>
