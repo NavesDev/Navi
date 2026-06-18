@@ -10,8 +10,12 @@ import {
   TouchableOpacity,
   Modal,
   TextInput,
+  Dimensions,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const PAGE_WIDTH = SCREEN_WIDTH - 48;
 import { API_URL } from '../services/auth';
 import { theme } from '../styles/theme';
 
@@ -83,6 +87,7 @@ export const Finances: React.FC<FinancesProps> = ({ token, visible }) => {
   const [categoryBudgetAmount, setCategoryBudgetAmount] = useState('');
   const [isSubmittingCategoryBudget, setIsSubmittingCategoryBudget] = useState(false);
   const [showDeleteCategoryBudgetConfirm, setShowDeleteCategoryBudgetConfirm] = useState(false);
+  const [currentPageIndex, setCurrentPageIndex] = useState(0);
 
   // Category Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -549,79 +554,117 @@ export const Finances: React.FC<FinancesProps> = ({ token, visible }) => {
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>Crie categorias acima para definir metas.</Text>
             </View>
-          ) : (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.categoryBudgetsScrollContent}
-            >
-              {categories.map((category) => {
-                const spent = currentMonthExpenses
-                  .filter((e) => e.category_id === category.id)
-                  .reduce((acc, curr) => acc + parseFloat(curr.amount || '0'), 0);
-                const budget = categoryBudgets.find((cb) => cb.category_id === category.id);
-                const budgetAmount = budget ? parseFloat(budget.amount) : 0;
-                const hasBudget = budgetAmount > 0;
-                const percentage = hasBudget ? (spent / budgetAmount) * 100 : 0;
+          ) : (() => {
+            const size = 4;
+            const categoryPages = [];
+            for (let i = 0; i < categories.length; i += size) {
+              categoryPages.push(categories.slice(i, i + size));
+            }
 
-                return (
-                  <TouchableOpacity
-                    key={category.id}
-                    style={styles.categoryCard}
-                    activeOpacity={0.7}
-                    onPress={() => {
-                      setSelectedCategoryForBudget(category);
-                      setSelectedCategoryBudget(budget || null);
-                      setCategoryBudgetAmount(budget ? parseFloat(budget.amount).toFixed(2) : '');
-                      setShowDeleteCategoryBudgetConfirm(false);
-                      setIsCategoryBudgetModalOpen(true);
-                    }}
-                  >
-                    <View style={styles.categoryCardHeader}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 8 }}>
-                        <View style={[styles.iconContainerSmall, { backgroundColor: theme.colors.primaryContainer }]}>
-                          <MaterialIcons name={category.icon as any} size={16} color={theme.colors.onPrimaryContainer} />
-                        </View>
-                        <Text style={styles.categoryCardName} numberOfLines={1}>{category.name}</Text>
-                      </View>
-                      <Text style={styles.categoryCardBudgetLabel}>
-                        {hasBudget ? `Meta: R$ ${budgetAmount.toFixed(2)}` : 'Sem Meta'}
-                      </Text>
+            return (
+              <View>
+                <ScrollView
+                  horizontal
+                  pagingEnabled
+                  showsHorizontalScrollIndicator={false}
+                  snapToInterval={PAGE_WIDTH}
+                  decelerationRate="fast"
+                  snapToAlignment="start"
+                  contentContainerStyle={styles.categoryBudgetsScrollContent}
+                  onScroll={(e) => {
+                    const contentOffset = e.nativeEvent.contentOffset.x;
+                    const index = Math.round(contentOffset / PAGE_WIDTH);
+                    setCurrentPageIndex(index);
+                  }}
+                  scrollEventThrottle={16}
+                >
+                  {categoryPages.map((pageCategories, pageIndex) => (
+                    <View key={pageIndex} style={[styles.categoryPage, { width: PAGE_WIDTH }]}>
+                      {pageCategories.map((category) => {
+                        const spent = currentMonthExpenses
+                          .filter((e) => e.category_id === category.id)
+                          .reduce((acc, curr) => acc + parseFloat(curr.amount || '0'), 0);
+                        const budget = categoryBudgets.find((cb) => cb.category_id === category.id);
+                        const budgetAmount = budget ? parseFloat(budget.amount) : 0;
+                        const hasBudget = budgetAmount > 0;
+                        const percentage = hasBudget ? (spent / budgetAmount) * 100 : 0;
+
+                        return (
+                          <TouchableOpacity
+                            key={category.id}
+                            style={styles.categoryCard}
+                            activeOpacity={0.7}
+                            onPress={() => {
+                              setSelectedCategoryForBudget(category);
+                              setSelectedCategoryBudget(budget || null);
+                              setCategoryBudgetAmount(budget ? parseFloat(budget.amount).toFixed(2) : '');
+                              setShowDeleteCategoryBudgetConfirm(false);
+                              setIsCategoryBudgetModalOpen(true);
+                            }}
+                          >
+                            <View style={styles.categoryCardHeader}>
+                              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 8 }}>
+                                <View style={[styles.iconContainerSmall, { backgroundColor: theme.colors.primaryContainer }]}>
+                                  <MaterialIcons name={category.icon as any} size={16} color={theme.colors.onPrimaryContainer} />
+                                </View>
+                                <Text style={styles.categoryCardName} numberOfLines={1}>{category.name}</Text>
+                              </View>
+                              <Text style={styles.categoryCardBudgetLabel}>
+                                {hasBudget ? `Meta: R$ ${budgetAmount.toFixed(2)}` : 'Sem Meta'}
+                              </Text>
+                            </View>
+
+                            {hasBudget ? (
+                              <View style={styles.progressContainer}>
+                                <View style={styles.progressBarBackground}>
+                                  <View
+                                    style={[
+                                      styles.progressBarFill,
+                                      {
+                                        width: `${Math.min(percentage, 100)}%`,
+                                        backgroundColor:
+                                          percentage > 100
+                                            ? '#FF6B6B'
+                                            : percentage >= 70
+                                            ? '#FFA502'
+                                            : percentage >= 40
+                                            ? '#FFD25A'
+                                            : '#6BCB77',
+                                      },
+                                    ]}
+                                  />
+                                </View>
+                                <View style={styles.progressTextRow}>
+                                  <Text style={styles.progressSpentText}>Gasto: R$ {spent.toFixed(2)}</Text>
+                                  <Text style={styles.progressPercentText}>{percentage.toFixed(0)}%</Text>
+                                </View>
+                              </View>
+                            ) : (
+                              <Text style={styles.setupBudgetHelperText}>Tocar para configurar meta</Text>
+                            )}
+                          </TouchableOpacity>
+                        );
+                      })}
                     </View>
+                  ))}
+                </ScrollView>
 
-                    {hasBudget ? (
-                      <View style={styles.progressContainer}>
-                        <View style={styles.progressBarBackground}>
-                          <View
-                            style={[
-                              styles.progressBarFill,
-                              {
-                                width: `${Math.min(percentage, 100)}%`,
-                                backgroundColor:
-                                  percentage > 100
-                                    ? '#FF6B6B'
-                                    : percentage >= 70
-                                    ? '#FFA502'
-                                    : percentage >= 40
-                                    ? '#FFD25A'
-                                    : '#6BCB77',
-                              },
-                            ]}
-                          />
-                        </View>
-                        <View style={styles.progressTextRow}>
-                          <Text style={styles.progressSpentText}>Gasto: R$ {spent.toFixed(2)}</Text>
-                          <Text style={styles.progressPercentText}>{percentage.toFixed(0)}%</Text>
-                        </View>
-                      </View>
-                    ) : (
-                      <Text style={styles.setupBudgetHelperText}>Tocar para configurar meta</Text>
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-          )}
+                {categoryPages.length > 1 && (
+                  <View style={styles.paginationDotsContainer}>
+                    {categoryPages.map((_, i) => (
+                      <View
+                        key={i}
+                        style={[
+                          styles.paginationDot,
+                          currentPageIndex === i ? styles.paginationDotActive : null
+                        ]}
+                      />
+                    ))}
+                  </View>
+                )}
+              </View>
+            );
+          })()}
 
           {/* SECTION 4: Histórico de Gastos */}
           <View style={styles.sectionHeader}>
@@ -1472,17 +1515,38 @@ const styles = StyleSheet.create({
     zIndex: 99,
   },
   categoryCard: {
-    width: 280,
     backgroundColor: theme.colors.surface,
     borderWidth: 1,
     borderColor: '#2A2A2A',
     borderRadius: theme.rounded.soft,
     padding: 16,
-    marginRight: 16,
+    marginBottom: 12,
+    width: '100%',
   },
   categoryBudgetsScrollContent: {
     paddingHorizontal: 24,
-    paddingBottom: 16,
+    paddingBottom: 4,
+  },
+  categoryPage: {
+    paddingRight: 16,
+  },
+  paginationDotsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 8,
+    marginBottom: 16,
+  },
+  paginationDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#444444',
+    marginHorizontal: 4,
+  },
+  paginationDotActive: {
+    backgroundColor: theme.colors.primary,
+    width: 14,
   },
   categoryCardHeader: {
     flexDirection: 'row',
