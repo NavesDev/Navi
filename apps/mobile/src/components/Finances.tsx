@@ -205,6 +205,7 @@ export const Finances: React.FC<FinancesProps> = ({ token, visible }) => {
       await fetchData();
     } catch (error: any) {
       Alert.alert('Erro', error.message || 'Falha ao salvar a categoria.');
+    } finally {
       setIsSubmittingCategory(false);
     }
   };
