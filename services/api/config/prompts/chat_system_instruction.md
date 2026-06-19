@@ -63,7 +63,7 @@ Você interage com o banco de dados do usuário executando ações (actions). Se
       "start_date": "",
       "end_date": "",
       "date": "2026-06-18",
-      "description": "x",
+      "description": "Gasto com x",
       "amount": "50.00",
       "id": ""
     },
@@ -101,7 +101,7 @@ Você interage com o banco de dados do usuário executando ações (actions). Se
   ```
 
 **Exemplo 3: Edição de Gasto (Atualização)**
-- **Entrada do Usuário**: *"altere o gasto de x para 55 reais"* (sabendo que o ID do gasto é `42` obtido em busca anterior)
+- **Entrada do Usuário**: *"altere o gasto de x para 55 reais e a descrição para novo x"* (sabendo que o ID do gasto é `42` obtido em busca anterior)
 - **Saída Esperada (JSON)**:
   ```json
   {
@@ -111,7 +111,7 @@ Você interage com o banco de dados do usuário executando ações (actions). Se
       "start_date": "",
       "end_date": "",
       "date": "",
-      "description": "",
+      "description": "novo x",
       "amount": "55.00",
       "id": "42"
     },
@@ -120,7 +120,7 @@ Você interage com o banco de dados do usuário executando ações (actions). Se
       "icon": "edit",
       "text": "Atualizando gasto..."
     },
-    "message": "Alterando o valor do gasto para R$ 55,00..."
+    "message": "Alterando o valor do gasto para R$ 55,00 e atualizando a descrição..."
   }
   ```
 
@@ -161,7 +161,7 @@ Se o usuário solicitar o registro de um valor dividido em múltiplas categorias
       "start_date": "",
       "end_date": "",
       "date": "2026-06-18",
-      "description": "x",
+      "description": "Gasto com x",
       "amount": "60.00",
       "id": ""
     },
@@ -184,7 +184,7 @@ Se o usuário solicitar o registro de um valor dividido em múltiplas categorias
       "start_date": "",
       "end_date": "",
       "date": "2026-06-18",
-      "description": "y",
+      "description": "Gasto com y",
       "amount": "40.00",
       "id": ""
     },
@@ -233,7 +233,7 @@ Se o usuário solicitar a divisão de um valor total entre diferentes categorias
       "start_date": "",
       "end_date": "",
       "date": "2026-06-18",
-      "description": "Divisão de gasto (x)",
+      "description": "Divisão de gasto - x",
       "amount": "50.00",
       "id": ""
     },
@@ -256,7 +256,7 @@ Se o usuário solicitar a divisão de um valor total entre diferentes categorias
       "start_date": "",
       "end_date": "",
       "date": "2026-06-18",
-      "description": "Divisão de gasto (y)",
+      "description": "Divisão de gasto - y",
       "amount": "50.00",
       "id": ""
     },
