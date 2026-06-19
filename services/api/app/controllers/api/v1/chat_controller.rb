@@ -46,7 +46,7 @@ module Api
         response = openai.chat(messages)
         loop_count = 0
 
-        while response["action"].present? && loop_count < 3
+        while response["actions"].present? && response["actions"].any? && loop_count < 3
           write_event({
             session_id: session_id,
             status: "searching",
@@ -54,10 +54,15 @@ module Api
             placeholder: response["placeholder"]
           })
 
-          query_results = execute_action(response["action"], response["params"])
+          query_results = response["actions"].map do |act|
+            {
+              action: act["action"],
+              result: execute_action(act["action"], act["params"])
+            }
+          end
 
           messages << { role: "assistant", content: response.to_json }
-          messages << { role: "user", content: "Resultados da action: #{query_results.to_json}" }
+          messages << { role: "user", content: "Resultados das actions: #{query_results.to_json}" }
 
           response = openai.chat(messages)
           loop_count += 1

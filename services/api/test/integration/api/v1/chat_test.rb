@@ -26,8 +26,7 @@ class Api::V1::ChatTest < ActionDispatch::IntegrationTest
     openai_instance = OpenaiService.new
     def openai_instance.chat(messages)
       {
-        "action" => "",
-        "params" => { "category" => "", "start_date" => "", "end_date" => "" },
+        "actions" => [],
         "placeholder" => { "type" => "", "icon" => "", "text" => "" },
         "message" => "Olá! Como posso ajudar você hoje?"
       }
@@ -54,14 +53,17 @@ class Api::V1::ChatTest < ActionDispatch::IntegrationTest
     
     responses = [
       {
-        "action" => "search_expenses",
-        "params" => { "category" => "Alimentação", "start_date" => "2026-06-01", "end_date" => "2026-06-30" },
+        "actions" => [
+          {
+            "action" => "search_expenses",
+            "params" => { "category" => "Alimentação", "start_date" => "2026-06-01", "end_date" => "2026-06-30", "date" => "", "description" => "", "amount" => "", "id" => "" }
+          }
+        ],
         "placeholder" => { "type" => "searching_expenses", "icon" => "fastfood", "text" => "Buscando gastos de Alimentação" },
         "message" => "Buscando seus gastos com alimentação este mês..."
       },
       {
-        "action" => "",
-        "params" => { "category" => "", "start_date" => "", "end_date" => "" },
+        "actions" => [],
         "placeholder" => { "type" => "", "icon" => "", "text" => "" },
         "message" => "Você gastou R$ 50,00 com alimentação este mês."
       }
@@ -92,23 +94,26 @@ class Api::V1::ChatTest < ActionDispatch::IntegrationTest
     openai_instance = OpenaiService.new
     
     first_response = {
-      "action" => "create_expense",
-      "params" => {
-        "category" => "Alimentação",
-        "start_date" => "",
-        "end_date" => "",
-        "date" => "2026-06-16",
-        "description" => "Jantar",
-        "amount" => "45.00",
-        "id" => ""
-      },
+      "actions" => [
+        {
+          "action" => "create_expense",
+          "params" => {
+            "category" => "Alimentação",
+            "start_date" => "",
+            "end_date" => "",
+            "date" => "2026-06-16",
+            "description" => "Jantar",
+            "amount" => "45.00",
+            "id" => ""
+          }
+        }
+      ],
       "placeholder" => { "type" => "creating_expense", "icon" => "add", "text" => "Criando gasto..." },
       "message" => "Adicionando o gasto de R$ 45,00..."
     }
     
     second_response = {
-      "action" => "",
-      "params" => { "category" => "", "start_date" => "", "end_date" => "", "date" => "", "description" => "", "amount" => "", "id" => "" },
+      "actions" => [],
       "placeholder" => { "type" => "", "icon" => "", "text" => "" },
       "message" => "Gasto de R$ 45,00 em Alimentação criado com sucesso!"
     }
