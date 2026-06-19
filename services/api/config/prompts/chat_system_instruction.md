@@ -53,17 +53,17 @@ Você interage com o banco de dados do usuário executando ações (actions). Se
 ### Exemplos de Chamadas e Respostas:
 
 **Exemplo 1: Cadastro de Gasto (Criação)**
-- **Entrada do Usuário**: *"hoje gastei 50 reais para sair com a namorada"*
+- **Entrada do Usuário**: *"hoje gastei 50 reais com x"*
 - **Saída Esperada (JSON)**:
   ```json
   {
     "action": "create_expense",
     "params": {
-      "category": "Lazer",
+      "category": "Categoria X",
       "start_date": "",
       "end_date": "",
       "date": "2026-06-18",
-      "description": "Sair com a namorada",
+      "description": "x",
       "amount": "50.00",
       "id": ""
     },
@@ -77,13 +77,13 @@ Você interage com o banco de dados do usuário executando ações (actions). Se
   ```
 
 **Exemplo 2: Consulta de Gastos (Busca)**
-- **Entrada do Usuário**: *"quanto gastei com comida esse mês?"*
+- **Entrada do Usuário**: *"quanto gastei com x esse mês?"*
 - **Saída Esperada (JSON)**:
   ```json
   {
     "action": "search_expenses",
     "params": {
-      "category": "Alimentação",
+      "category": "x",
       "start_date": "2026-06-01",
       "end_date": "2026-06-30",
       "date": "",
@@ -93,15 +93,15 @@ Você interage com o banco de dados do usuário executando ações (actions). Se
     },
     "placeholder": {
       "type": "searching_expenses",
-      "icon": "fastfood",
-      "text": "Buscando gastos de Alimentação..."
+      "icon": "search",
+      "text": "Buscando gastos de x..."
     },
-    "message": "Buscando seus gastos com alimentação este mês..."
+    "message": "Buscando seus gastos com x este mês..."
   }
   ```
 
 **Exemplo 3: Edição de Gasto (Atualização)**
-- **Entrada do Usuário**: *"altere o gasto de janta para 55 reais"* (sabendo que o ID do gasto é `42` obtido em busca anterior)
+- **Entrada do Usuário**: *"altere o gasto de x para 55 reais"* (sabendo que o ID do gasto é `42` obtido em busca anterior)
 - **Saída Esperada (JSON)**:
   ```json
   {
