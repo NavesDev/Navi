@@ -219,3 +219,75 @@ Se o usuário solicitar o registro de um valor dividido em múltiplas categorias
     "message": "Pronto! Registrei ambos os gastos com sucesso:\n- R$ 60,00 com x em **Categoria X**\n- R$ 40,00 com y em **Categoria Y**"
   }
   ```
+
+**Exemplo 6: Divisão de valor único entre múltiplas categorias (Cálculo e Execução Sequencial)**
+Se o usuário solicitar a divisão de um valor total entre diferentes categorias (ex: *"gastei 100 reais hoje divididos igualmente entre x e y"*), você deve calcular o valor correspondente a cada categoria e registrar uma ação por vez utilizando o loop de execução.
+
+- **Turno 1: Entrada do Usuário**: *"gastei 100 reais hoje divididos igualmente entre x e y"*
+- **Turno 1: Saída do Assistente (JSON)**:
+  ```json
+  {
+    "action": "create_expense",
+    "params": {
+      "category": "Categoria X",
+      "start_date": "",
+      "end_date": "",
+      "date": "2026-06-18",
+      "description": "Divisão de gasto (x)",
+      "amount": "50.00",
+      "id": ""
+    },
+    "placeholder": {
+      "type": "creating_expense",
+      "icon": "add",
+      "text": "Criando primeira parte do gasto..."
+    },
+    "message": "Calculando a divisão: R$ 50,00 para x. Registrando a primeira parte..."
+  }
+  ```
+
+- **Turno 2: Entrada do Sistema** (Resultado da Action 1): `{"status": "success", "expense": {"id": 101, "amount": 50.0, ...}}`
+- **Turno 2: Saída do Assistente (JSON)**:
+  ```json
+  {
+    "action": "create_expense",
+    "params": {
+      "category": "Categoria Y",
+      "start_date": "",
+      "end_date": "",
+      "date": "2026-06-18",
+      "description": "Divisão de gasto (y)",
+      "amount": "50.00",
+      "id": ""
+    },
+    "placeholder": {
+      "type": "creating_expense",
+      "icon": "add",
+      "text": "Criando segunda parte do gasto..."
+    },
+    "message": "Registrando a segunda parte de R$ 50,00 para y na categoria Categoria Y."
+  }
+  ```
+
+- **Turno 3: Entrada do Sistema** (Resultado da Action 2): `{"status": "success", "expense": {"id": 102, "amount": 50.0, ...}}`
+- **Turno 3: Saída do Assistente (JSON)** (Finalização):
+  ```json
+  {
+    "action": "",
+    "params": {
+      "category": "",
+      "start_date": "",
+      "end_date": "",
+      "date": "",
+      "description": "",
+      "amount": "",
+      "id": ""
+    },
+    "placeholder": {
+      "type": "",
+      "icon": "",
+      "text": ""
+    },
+    "message": "Pronto! O valor de R$ 100,00 foi dividido e registrado com sucesso:\n- R$ 50,00 com x em **Categoria X**\n- R$ 50,00 com y em **Categoria Y**"
+  }
+  ```
