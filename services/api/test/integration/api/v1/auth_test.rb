@@ -25,6 +25,7 @@ class Api::V1::AuthTest < ActionDispatch::IntegrationTest
     json_response = JSON.parse(response.body)
     assert_equal "new_user", json_response["user"]["username"]
     assert_not_nil json_response["token"]
+    assert_not_nil json_response["refresh_token"]
   end
 
   test "should return unprocessable entity when registration parameters are invalid" do
@@ -74,6 +75,7 @@ class Api::V1::AuthTest < ActionDispatch::IntegrationTest
     json_response = JSON.parse(response.body)
     assert_equal @user.username, json_response["user"]["username"]
     assert_not_nil json_response["token"]
+    assert_not_nil json_response["refresh_token"]
   end
 
   test "should return unauthorized when password is wrong" do
@@ -87,6 +89,80 @@ class Api::V1::AuthTest < ActionDispatch::IntegrationTest
     assert_response :unauthorized
     json_response = JSON.parse(response.body)
     assert_equal "Invalid username or password", json_response["error"]
+  end
+
+  # --- Refresh Token & Logout Tests ---
+
+  test "should return new access and refresh tokens when refresh token is valid" do
+    # Arrange
+    rt = @user.refresh_tokens.create!(expires_at: 1.day.from_now)
+    params = { refresh_token: rt.token }
+
+    # Act
+    post "/api/v1/auth/refresh", params: params, as: :json
+
+    # Assert
+    assert_response :ok
+    json_response = JSON.parse(response.body)
+    assert_not_nil json_response["token"]
+    assert_not_nil json_response["refresh_token"]
+    assert_not_equal rt.token, json_response["refresh_token"]
+    assert_nil RefreshToken.find_by(id: rt.id)
+  end
+
+  test "should return unauthorized when refresh token is expired" do
+    # Arrange
+    rt = @user.refresh_tokens.create!(expires_at: 1.day.ago)
+    params = { refresh_token: rt.token }
+
+    # Act
+    post "/api/v1/auth/refresh", params: params, as: :json
+
+    # Assert
+    assert_response :unauthorized
+    json_response = JSON.parse(response.body)
+    assert_equal "Invalid or expired refresh token", json_response["error"]
+  end
+
+  test "should return unauthorized when refresh token is invalid" do
+    # Arrange
+    params = { refresh_token: "invalid_token_123" }
+
+    # Act
+    post "/api/v1/auth/refresh", params: params, as: :json
+
+    # Assert
+    assert_response :unauthorized
+    json_response = JSON.parse(response.body)
+    assert_equal "Invalid or expired refresh token", json_response["error"]
+  end
+
+  test "should logout successfully when refresh token is valid" do
+    # Arrange
+    rt = @user.refresh_tokens.create!(expires_at: 1.day.from_now)
+    params = { refresh_token: rt.token }
+
+    # Act
+    post "/api/v1/auth/logout", params: params, as: :json
+
+    # Assert
+    assert_response :ok
+    json_response = JSON.parse(response.body)
+    assert_equal "Logged out successfully", json_response["message"]
+    assert_nil RefreshToken.find_by(id: rt.id)
+  end
+
+  test "should return unprocessable entity when logout refresh token is invalid" do
+    # Arrange
+    params = { refresh_token: "invalid_token_123" }
+
+    # Act
+    post "/api/v1/auth/logout", params: params, as: :json
+
+    # Assert
+    assert_response :unprocessable_entity
+    json_response = JSON.parse(response.body)
+    assert_equal "Invalid refresh token", json_response["error"]
   end
 
   # --- Auth Me Tests ---
