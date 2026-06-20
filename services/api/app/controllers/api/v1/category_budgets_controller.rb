@@ -19,7 +19,8 @@ module Api
 
       # POST /api/v1/category_budgets
       def create
-        category_budget = current_user.category_budgets.build(category_budget_params)
+        category_budget = current_user.category_budgets.build(category_budget_params.except(:category_id))
+        assign_owned_category(category_budget)
 
         if category_budget.save
           render json: category_budget_as_json(category_budget), status: :created
@@ -30,7 +31,10 @@ module Api
 
       # PUT/PATCH /api/v1/category_budgets/:id
       def update
-        if @category_budget.update(category_budget_params)
+        attrs = category_budget_params.except(:category_id)
+        assign_owned_category(@category_budget)
+
+        if @category_budget.errors.empty? && @category_budget.update(attrs)
           render json: category_budget_as_json(@category_budget), status: :ok
         else
           render json: { error: @category_budget.errors.full_messages.join(', ') }, status: :unprocessable_entity
@@ -58,10 +62,20 @@ module Api
         params.permit(:category_id, :amount, :date)
       end
 
+      def assign_owned_category(category_budget)
+        return unless category_budget_params.key?(:category_id)
+
+        category = current_user.categories.find_by(id: category_budget_params[:category_id])
+        if category
+          category_budget.category = category
+        else
+          category_budget.errors.add(:category, 'not found')
+        end
+      end
+
       def category_budget_as_json(cb)
         {
           id: cb.id,
-          user_id: cb.user_id,
           category_id: cb.category_id,
           amount: cb.amount.to_s,
           date: cb.date,

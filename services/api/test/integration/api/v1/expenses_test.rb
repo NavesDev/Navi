@@ -137,6 +137,23 @@ class Api::V1::ExpensesTest < ActionDispatch::IntegrationTest
     assert_match /amount must be greater than 0/i, json_response["error"]
   end
 
+  test "should reject expense creation with category belonging to another user" do
+    params = {
+      date: "2026-06-17",
+      category_id: @other_category.id,
+      description: "Cross-tenant category",
+      amount: 45.00
+    }.to_json
+
+    assert_no_difference -> { @user.expenses.count } do
+      post "/api/v1/expenses", params: params, headers: @headers
+    end
+
+    assert_response :unprocessable_entity
+    json_response = JSON.parse(response.body)
+    assert_match /category/i, json_response["error"]
+  end
+
   # --- Update Tests ---
 
   test "should update expense when it belongs to authenticated user and parameters are valid" do
@@ -171,6 +188,19 @@ class Api::V1::ExpensesTest < ActionDispatch::IntegrationTest
 
     # Assert
     assert_response :not_found
+  end
+
+  test "should reject expense update with category belonging to another user" do
+    params = {
+      category_id: @other_category.id
+    }.to_json
+
+    put "/api/v1/expenses/#{@user_expense.id}", params: params, headers: @headers
+
+    assert_response :unprocessable_entity
+    json_response = JSON.parse(response.body)
+    assert_match /category/i, json_response["error"]
+    assert_not_equal @other_category.id, @user_expense.reload.category_id
   end
 
   # --- Destroy Tests ---

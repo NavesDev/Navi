@@ -24,7 +24,8 @@ module Api
 
       # POST /api/v1/expenses
       def create
-        expense = current_user.expenses.build(expense_params)
+        expense = current_user.expenses.build(expense_params.except(:category_id))
+        assign_owned_category(expense)
 
         if expense.save
           render json: expense_as_json(expense), status: :created
@@ -40,7 +41,10 @@ module Api
 
       # PUT/PATCH /api/v1/expenses/:id
       def update
-        if @expense.update(expense_params)
+        attrs = expense_params.except(:category_id)
+        assign_owned_category(@expense)
+
+        if @expense.errors.empty? && @expense.update(attrs)
           render json: expense_as_json(@expense), status: :ok
         else
           render json: { error: @expense.errors.full_messages.join(', ') }, status: :unprocessable_entity
@@ -64,6 +68,17 @@ module Api
 
       def expense_params
         params.permit(:date, :category_id, :description, :amount)
+      end
+
+      def assign_owned_category(expense)
+        return unless expense_params.key?(:category_id)
+
+        category = current_user.categories.find_by(id: expense_params[:category_id])
+        if category
+          expense.category = category
+        else
+          expense.errors.add(:category, 'not found')
+        end
       end
 
       def expense_as_json(expense)

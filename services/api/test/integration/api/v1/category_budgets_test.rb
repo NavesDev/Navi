@@ -141,6 +141,24 @@ class Api::V1::CategoryBudgetsTest < ActionDispatch::IntegrationTest
     assert_match /Defina um orçamento mensal total antes de definir metas por categoria/i, json_response["error"]
   end
 
+  test "should reject category budget creation with category belonging to another user" do
+    params = {
+      category_budget: {
+        category_id: @other_category.id,
+        amount: 250.00,
+        date: "2026-06-15"
+      }
+    }.to_json
+
+    assert_no_difference -> { @user.category_budgets.count } do
+      post "/api/v1/category_budgets", params: params, headers: @headers
+    end
+
+    assert_response :unprocessable_entity
+    json_response = JSON.parse(response.body)
+    assert_match /category/i, json_response["error"]
+  end
+
   # --- Update Tests ---
 
   test "should update category budget when parameters are valid" do
@@ -165,6 +183,28 @@ class Api::V1::CategoryBudgetsTest < ActionDispatch::IntegrationTest
     assert_response :ok
     json_response = JSON.parse(response.body)
     assert_equal "500.0", json_response["amount"]
+  end
+
+  test "should reject category budget update with category belonging to another user" do
+    cb = CategoryBudget.create!(
+      user: @user,
+      category: @category,
+      amount: 300.00,
+      date: "2026-06-01"
+    )
+
+    params = {
+      category_budget: {
+        category_id: @other_category.id
+      }
+    }.to_json
+
+    put "/api/v1/category_budgets/#{cb.id}", params: params, headers: @headers
+
+    assert_response :unprocessable_entity
+    json_response = JSON.parse(response.body)
+    assert_match /category/i, json_response["error"]
+    assert_equal @category.id, cb.reload.category_id
   end
 
   # --- Destroy Tests ---
