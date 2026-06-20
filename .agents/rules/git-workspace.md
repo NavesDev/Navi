@@ -1,3 +1,7 @@
+---
+trigger: always_on
+---
+
 # Regra de Workflow do Git e Commits por Relevância (git-workflow.md)
 
 Ao interagir com o repositório Navi e realizar commits:

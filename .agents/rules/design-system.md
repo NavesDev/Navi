@@ -1,3 +1,7 @@
+---
+trigger: always_on
+---
+
 # Regra de Padrões de Design (DESIGN.md)
 
 Sempre que criar ou alterar elementos visuais, estilos, componentes de UI ou telas no aplicativo mobile (React Native/Expo) ou na web, o agente **DEVE** obrigatoriamente ler o arquivo `DESIGN.md` na raiz do repositório antes de realizar qualquer modificação.

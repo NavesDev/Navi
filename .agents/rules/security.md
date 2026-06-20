@@ -1,3 +1,7 @@
+---
+trigger: always_on
+---
+
 # Regra de Segurança e Ocultação de Chaves de Banco (security.md)
 
 Ao projetar, implementar ou documentar endpoints de API no backend (Rails) ou consumi-los no frontend/mobile:
