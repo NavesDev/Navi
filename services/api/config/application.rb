@@ -30,5 +30,8 @@ module Api
     config.api_only = true
 
     config.middleware.use Rack::Attack
+
+    # Allow user registration (signups)
+    config.allow_signup = ENV.fetch("ALLOW_SIGNUP", "false").to_s.downcase == "true"
   end
 end

@@ -40,6 +40,26 @@ class Api::V1::AuthTest < ActionDispatch::IntegrationTest
     assert_match /username is too short/i, json_response["error"]
   end
 
+  test "should block registration when signup configuration is disabled" do
+    # Arrange
+    original_allow_signup = Rails.configuration.allow_signup
+    Rails.configuration.allow_signup = false
+    params = { username: "new_user_blocked", password: "password123" }
+
+    begin
+      # Act
+      post "/api/v1/auth/register", params: params, as: :json
+
+      # Assert
+      assert_response :forbidden
+      json_response = JSON.parse(response.body)
+      assert_equal "Registration is disabled", json_response["error"]
+    ensure
+      # Cleanup
+      Rails.configuration.allow_signup = original_allow_signup
+    end
+  end
+
   # --- Login Tests ---
 
   test "should return token when login is successful" do

@@ -5,6 +5,11 @@ module Api
 
       # POST /api/v1/auth/register
       def register
+        unless Rails.configuration.allow_signup
+          render json: { error: 'Registration is disabled' }, status: :forbidden
+          return
+        end
+
         user = User.new(register_params)
         if user.save
           token = JwtService.encode(user_id: user.id)
