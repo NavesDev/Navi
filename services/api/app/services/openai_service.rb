@@ -39,6 +39,7 @@ class OpenaiService
                   properties: {
                     action: {
                       type: "string",
+                      enum: ["search_expenses", "search_budgets", "create_expense", "update_expense", "delete_expense"],
                       description: "Qual ação executar no banco de dados. Valores suportados: 'search_expenses', 'search_budgets', 'create_expense', 'update_expense', 'delete_expense'."
                     },
                     params: {

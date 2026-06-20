@@ -9,11 +9,12 @@ module Api
         response.headers['X-Accel-Buffering'] = 'no'
         response.headers['Cache-Control'] = 'no-cache'
 
-        user_message = params[:message]
+        user_message = params[:message].to_s
         if user_message.blank?
           write_event({ error: "Message is required" }, event: "error")
           return
         end
+        user_message = user_message.first(4_000)
 
         current_date = params[:current_date]
         
@@ -35,11 +36,7 @@ module Api
           { role: "system", content: system_instruction }
         ]
 
-        if params[:history].present? && params[:history].is_a?(Array)
-          params[:history].last(10).each do |msg|
-            messages << { role: msg["role"], content: msg["content"] } if msg["role"].present? && msg["content"].present?
-          end
-        end
+        append_safe_history(messages)
 
         messages << { role: "user", content: user_content }
 
@@ -53,6 +50,16 @@ module Api
             message: response["message"],
             placeholder: response["placeholder"]
           })
+
+          if mutation_requested?(response["actions"]) && !confirmed_mutation?
+            write_event({
+              session_id: session_id,
+              status: "confirmation_required",
+              message: response["message"],
+              actions: response["actions"].select { |act| mutating_action?(act["action"]) }
+            })
+            return
+          end
 
           query_results = response["actions"].map do |act|
             {
@@ -86,6 +93,31 @@ module Api
       def write_event(data, event: "message")
         response.stream.write("event: #{event}\n")
         response.stream.write("data: #{data.to_json}\n\n")
+      end
+
+      def append_safe_history(messages)
+        return unless params[:history].present? && params[:history].is_a?(Array)
+
+        params[:history].last(10).each do |msg|
+          role = msg["role"].to_s
+          content = msg["content"].to_s
+          next unless ["user", "assistant"].include?(role)
+          next if content.blank?
+
+          messages << { role: role, content: content.first(4_000) }
+        end
+      end
+
+      def confirmed_mutation?
+        ActiveModel::Type::Boolean.new.cast(params[:confirm_action])
+      end
+
+      def mutation_requested?(actions)
+        actions.any? { |act| mutating_action?(act["action"]) }
+      end
+
+      def mutating_action?(action)
+        ["create_expense", "update_expense", "delete_expense"].include?(action)
       end
 
       def execute_action(action, params)
