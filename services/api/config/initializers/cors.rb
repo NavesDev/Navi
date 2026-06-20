@@ -7,7 +7,9 @@
 
 Rails.application.config.middleware.insert_before 0, Rack::Cors do
   allow do
-    origins "*" # Allows all origins in development. Restrict this in production.
+    origins do |source, _env|
+      Rails.configuration.x.allowed_cors_origins.include?(source)
+    end
 
     resource "*",
       headers: :any,

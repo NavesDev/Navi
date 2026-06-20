@@ -33,5 +33,15 @@ module Api
 
     # Allow user registration (signups)
     config.allow_signup = ENV.fetch("ALLOW_SIGNUP", "false").to_s.downcase == "true"
+
+    default_cors_origins = if Rails.env.production?
+      []
+    else
+      ["http://localhost:5173", "http://localhost:8081", "http://localhost:19006"]
+    end
+    config.x.allowed_cors_origins = ENV.fetch("CORS_ORIGINS", default_cors_origins.join(","))
+                                        .split(",")
+                                        .map(&:strip)
+                                        .reject(&:blank?)
   end
 end
