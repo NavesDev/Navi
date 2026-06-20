@@ -40,45 +40,45 @@ module Api
 
         messages << { role: "user", content: user_content }
 
-        response = openai.chat(messages)
+        openai_res = openai.chat(messages)
         loop_count = 0
 
-        while response["actions"].present? && response["actions"].any? && loop_count < 3
+        while openai_res["actions"].present? && openai_res["actions"].any? && loop_count < 3
           write_event({
             session_id: session_id,
             status: "searching",
-            message: response["message"],
-            placeholder: response["placeholder"]
+            message: openai_res["message"],
+            placeholder: openai_res["placeholder"]
           })
 
-          if mutation_requested?(response["actions"]) && !confirmed_mutation?
+          if mutation_requested?(openai_res["actions"]) && !confirmed_mutation?
             write_event({
               session_id: session_id,
               status: "confirmation_required",
-              message: response["message"],
-              actions: response["actions"].select { |act| mutating_action?(act["action"]) }
+              message: openai_res["message"],
+              actions: openai_res["actions"].select { |act| mutating_action?(act["action"]) }
             })
             return
           end
 
-          query_results = response["actions"].map do |act|
+          query_results = openai_res["actions"].map do |act|
             {
               action: act["action"],
               result: execute_action(act["action"], act["params"])
             }
           end
 
-          messages << { role: "assistant", content: response.to_json }
+          messages << { role: "assistant", content: openai_res.to_json }
           messages << { role: "user", content: "Resultados das actions: #{query_results.to_json}" }
 
-          response = openai.chat(messages)
+          openai_res = openai.chat(messages)
           loop_count += 1
         end
 
         write_event({
           session_id: session_id,
           status: "completed",
-          message: response["message"]
+          message: openai_res["message"]
         })
 
       rescue => e
