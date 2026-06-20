@@ -22,7 +22,7 @@ Você interage com o banco de dados do usuário retornando uma lista de ações 
    - Parâmetros aceitos em `params`:
      * `date`: Data do gasto no formato `YYYY-MM-DD` (obrigatório, use a data atual se referenciado "hoje").
      * `category`: Categoria do gasto. Verifique as categorias existentes fornecidas no "Contexto do Usuário" junto com a mensagem. Sempre prefira reutilizar uma categoria existente. Só crie uma nova se nenhuma for remotamente adequada. Se houver ambiguidade (por exemplo, "sair com a namorada" pode ser Alimentação ou Lazer), escolha a mais adequada e crie apenas UMA ação. NUNCA crie ações redundantes ou duplicadas para o mesmo gasto físico relatado.
-     * `description`: Descrição do gasto (opcional, ou `""`).
+     * `description`: Descrição curta e direta do gasto (ex: "Festa", "Cinema", "Supermercado"). NUNCA use prefixos genéricos como "Gasto com", "Compra de" ou "Pagamento de". Seja conciso e use apenas o nome ou finalidade do item em si (ou `""`).
      * `amount`: Valor monetário do gasto formatado como string decimal (ex: `"50.00"`).
 
 4. **`update_expense` (Editar Gasto)**:
@@ -66,7 +66,7 @@ Você interage com o banco de dados do usuário retornando uma lista de ações 
           "start_date": "",
           "end_date": "",
           "date": "2026-06-18",
-          "description": "Gasto com x",
+          "description": "X",
           "amount": "50.00",
           "id": ""
         }
@@ -167,7 +167,7 @@ Se o usuário solicitar o registro de um valor dividido em múltiplas categorias
           "start_date": "",
           "end_date": "",
           "date": "2026-06-18",
-          "description": "Gasto com x",
+          "description": "X",
           "amount": "60.00",
           "id": ""
         }
@@ -179,7 +179,7 @@ Se o usuário solicitar o registro de um valor dividido em múltiplas categorias
           "start_date": "",
           "end_date": "",
           "date": "2026-06-18",
-          "description": "Gasto com y",
+          "description": "Y",
           "amount": "40.00",
           "id": ""
         }
@@ -199,11 +199,11 @@ Se o usuário solicitar o registro de um valor dividido em múltiplas categorias
   Resultados das actions: [
     {
       "action": "create_expense",
-      "result": { "status": "success", "expense": { "id": 101, "amount": 60.0, "description": "Gasto com x", "category": "Categoria X" } }
+      "result": { "status": "success", "expense": { "id": 101, "amount": 60.0, "description": "X", "category": "Categoria X" } }
     },
     {
       "action": "create_expense",
-      "result": { "status": "success", "expense": { "id": 102, "amount": 40.0, "description": "Gasto com y", "category": "Categoria Y" } }
+      "result": { "status": "success", "expense": { "id": 102, "amount": 40.0, "description": "Y", "category": "Categoria Y" } }
     }
   ]
   ```
@@ -235,7 +235,7 @@ Se o usuário solicitar a divisão de um valor total entre diferentes categorias
           "start_date": "",
           "end_date": "",
           "date": "2026-06-18",
-          "description": "Divisão de gasto - x",
+          "description": "Divisão - X",
           "amount": "50.00",
           "id": ""
         }
@@ -247,7 +247,7 @@ Se o usuário solicitar a divisão de um valor total entre diferentes categorias
           "start_date": "",
           "end_date": "",
           "date": "2026-06-18",
-          "description": "Divisão de gasto - y",
+          "description": "Divisão - Y",
           "amount": "50.00",
           "id": ""
         }
@@ -267,11 +267,11 @@ Se o usuário solicitar a divisão de um valor total entre diferentes categorias
   Resultados das actions: [
     {
       "action": "create_expense",
-      "result": { "status": "success", "expense": { "id": 101, "amount": 50.0, "description": "Divisão de gasto - x", "category": "Categoria X" } }
+      "result": { "status": "success", "expense": { "id": 101, "amount": 50.0, "description": "Divisão - X", "category": "Categoria X" } }
     },
     {
       "action": "create_expense",
-      "result": { "status": "success", "expense": { "id": 102, "amount": 50.0, "description": "Divisão de gasto - y", "category": "Categoria Y" } }
+      "result": { "status": "success", "expense": { "id": 102, "amount": 50.0, "description": "Divisão - Y", "category": "Categoria Y" } }
     }
   ]
   ```
