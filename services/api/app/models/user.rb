@@ -4,6 +4,7 @@ class User < ApplicationRecord
   has_many :budgets, dependent: :destroy
   has_many :categories, dependent: :destroy
   has_many :category_budgets, dependent: :destroy
+  has_many :refresh_tokens, dependent: :destroy
 
   validates :username, presence: true, uniqueness: true, format: { with: /\A[a-zA-Z0-9_]+\z/, message: "only allows letters, numbers, and underscores" }, length: { minimum: 3, maximum: 30 }
 end
