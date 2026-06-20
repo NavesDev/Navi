@@ -20,7 +20,7 @@ import { authService } from './src/services/auth';
 import { theme } from './src/styles/theme';
 import { AuthForm } from './src/features/auth';
 import { Chat } from './src/features/chat';
-import { Finances } from './src/components/Finances';
+import { Finances } from './src/features/finances';
 import { Routines } from './src/features/routines';
 import { Settings } from './src/features/settings';
 import { BottomTabBar, TabType } from './src/components/BottomTabBar';
