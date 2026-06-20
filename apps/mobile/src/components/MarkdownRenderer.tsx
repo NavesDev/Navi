@@ -8,7 +8,7 @@ interface MarkdownRendererProps {
 }
 
 export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ text, isUser }) => {
-  const textColor = isUser ? theme.colors.onSurface : theme.colors.onPrimaryContainer;
+  const textColor = theme.colors.onSurface;
 
   // Split by line to parse line-by-line formatting like lists and headers
   const lines = text.split('\n');

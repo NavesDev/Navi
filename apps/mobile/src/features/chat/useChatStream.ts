@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { API_URL } from '../services/auth';
+import { API_URL } from '../../services/auth';
 
 export interface Message {
   id: string;
