@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, Alert } from 'react-native';
+import { StyleSheet, Text, View, Alert, Image } from 'react-native';
 import { authService } from '../../services/auth';
 import { theme } from '../../styles/theme';
 import { Surface } from '../../ui/Surface';
@@ -49,6 +49,13 @@ export function AuthScreen({ onSuccess }: AuthScreenProps) {
 
   return (
     <Surface style={styles.card}>
+      <View style={styles.logoContainer}>
+        <Image
+          source={require('../../../assets/navi-mark.png')}
+          style={styles.logo}
+          resizeMode="contain"
+        />
+      </View>
       <Text style={styles.title}>Navi</Text>
       <Text style={styles.subheadline}>
         {authMode === 'login' ? 'Acesse sua conta' : 'Crie sua conta'}
@@ -99,6 +106,15 @@ const styles = StyleSheet.create({
   card: {
     padding: theme.spacing.xl,
     width: '100%',
+  },
+  logoContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: theme.spacing.md,
+  },
+  logo: {
+    width: 80,
+    height: 80,
   },
   title: {
     fontFamily: theme.fonts.headline,
