@@ -32,7 +32,7 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ activeTab, onTabPres
             <MaterialIcons
               name={tab.icon as any}
               size={24}
-              color={isActive ? theme.colors.primary : '#6E6E6E'}
+              color={isActive ? theme.colors.primary : theme.colors.outline}
               style={styles.icon}
             />
             <Text style={[styles.label, isActive && styles.activeLabel]}>
@@ -49,9 +49,9 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     height: 64,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: theme.colors.surfaceContainerLow,
     borderTopWidth: 1,
-    borderTopColor: '#2A2A2A',
+    borderTopColor: theme.colors.border,
     justifyContent: 'space-around',
     alignItems: 'center',
     paddingBottom: 4,
@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
   label: {
     fontFamily: theme.fonts.body,
     fontSize: 10,
-    color: '#6E6E6E',
+    color: theme.colors.outline,
   },
   activeLabel: {
     color: theme.colors.primary,

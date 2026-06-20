@@ -1,15 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ActivityIndicator, Alert, SafeAreaView } from 'react-native';
+import { StyleSheet, Text, View, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { authService } from '../services/auth';
-import { theme } from '../styles/theme';
+import { authService } from '../../services/auth';
+import { theme } from '../../styles/theme';
+import { Screen } from '../../ui/Screen';
+import { ScreenHeader } from '../../ui/ScreenHeader';
+import { Surface } from '../../ui/Surface';
+import { Button } from '../../ui/Button';
+import { LoadingState } from '../../ui/LoadingState';
 
-interface SettingsProps {
+interface SettingsScreenProps {
   token: string;
   onLogout: () => void;
 }
 
-export const Settings: React.FC<SettingsProps> = ({ token, onLogout }) => {
+export function SettingsScreen({ token, onLogout }: SettingsScreenProps) {
   const [profile, setProfile] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -32,20 +37,16 @@ export const Settings: React.FC<SettingsProps> = ({ token, onLogout }) => {
   }, [token]);
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Configurações 🌌</Text>
-      </View>
-
+    <Screen>
+      <ScreenHeader title="Configurações" />
       <View style={styles.content}>
         {isLoading ? (
-          <ActivityIndicator size="large" color={theme.colors.primary} style={styles.loader} />
+          <LoadingState label="Carregando perfil..." />
         ) : (
-          <View style={styles.card}>
+          <Surface style={styles.card}>
             <View style={styles.userRow}>
               <View style={styles.avatar}>
-                <MaterialIcons name="person" size={32} color="#0A0A0A" />
+                <MaterialIcons name="person" size={28} color={theme.colors.onPrimary} />
               </View>
               <View style={styles.userInfo}>
                 <Text style={styles.usernameText}>{profile?.username || 'Usuário'}</Text>
@@ -57,72 +58,48 @@ export const Settings: React.FC<SettingsProps> = ({ token, onLogout }) => {
 
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Plataforma</Text>
-              <Text style={styles.infoValue}>Navi Mobile 🌌</Text>
+              <Text style={styles.infoValue}>Navi Mobile</Text>
             </View>
 
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Versão do App</Text>
               <Text style={styles.infoValue}>1.0.0 (Beta)</Text>
             </View>
-          </View>
+          </Surface>
         )}
 
-        <View style={{ flex: 1 }} />
+        <View style={styles.spacer} />
 
-        <TouchableOpacity style={styles.logoutButton} onPress={onLogout} activeOpacity={0.8}>
-          <MaterialIcons name="logout" size={20} color="#FF6B6B" style={{ marginRight: 8 }} />
-          <Text style={styles.logoutButtonText}>SAIR DA CONTA</Text>
-        </TouchableOpacity>
+        <Button variant="danger" onPress={onLogout} style={styles.logoutButton}>
+          SAIR DA CONTA
+        </Button>
       </View>
-    </SafeAreaView>
+    </Screen>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
-  header: {
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#2A2A2A',
-    backgroundColor: theme.colors.surface,
-  },
-  headerTitle: {
-    fontFamily: theme.fonts.headline,
-    fontSize: 24,
-    color: theme.colors.primary,
-  },
   content: {
     flex: 1,
-    padding: 24,
-  },
-  loader: {
-    marginTop: 40,
+    padding: theme.spacing.lg,
   },
   card: {
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: '#2A2A2A',
-    borderRadius: theme.rounded.soft,
-    padding: 20,
-    marginBottom: 20,
+    padding: theme.spacing.lg,
+    marginBottom: theme.spacing.lg,
   },
   userRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: theme.spacing.md,
   },
   avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: theme.colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    marginRight: theme.spacing.md,
   },
   userInfo: {
     justifyContent: 'center',
@@ -135,44 +112,34 @@ const styles = StyleSheet.create({
   emailText: {
     fontFamily: theme.fonts.body,
     fontSize: 12,
-    color: theme.colors.secondary,
+    color: theme.colors.outline,
     marginTop: 2,
   },
   divider: {
     height: 1,
-    backgroundColor: '#2A2A2A',
-    marginVertical: 16,
+    backgroundColor: theme.colors.border,
+    marginVertical: theme.spacing.md,
   },
   infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 12,
+    paddingVertical: theme.spacing.sm,
   },
   infoLabel: {
     fontFamily: theme.fonts.body,
     fontSize: 14,
-    color: theme.colors.secondary,
+    color: theme.colors.outline,
   },
   infoValue: {
     fontFamily: theme.fonts.medium,
     fontSize: 14,
     color: theme.colors.onSurface,
   },
-  logoutButton: {
-    height: 50,
-    borderWidth: 1,
-    borderColor: '#4A1D1D',
-    backgroundColor: '#1E1010',
-    borderRadius: theme.rounded.soft,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
+  spacer: {
+    flex: 1,
   },
-  logoutButtonText: {
-    fontFamily: theme.fonts.semibold,
-    color: '#FF6B6B',
-    fontSize: 13,
-    letterSpacing: 1.5,
+  logoutButton: {
+    width: '100%',
+    marginBottom: theme.spacing.md,
   },
 });

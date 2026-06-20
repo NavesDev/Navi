@@ -18,11 +18,11 @@ import {
 
 import { authService } from './src/services/auth';
 import { theme } from './src/styles/theme';
-import { AuthForm } from './src/components/AuthForm';
+import { AuthForm } from './src/features/auth';
 import { Chat } from './src/features/chat';
 import { Finances } from './src/components/Finances';
-import { Routines } from './src/components/Routines';
-import { Settings } from './src/components/Settings';
+import { Routines } from './src/features/routines';
+import { Settings } from './src/features/settings';
 import { BottomTabBar, TabType } from './src/components/BottomTabBar';
 
 // Prevent the splash screen from auto-hiding
