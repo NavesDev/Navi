@@ -50,3 +50,6 @@ docker-compose.override.yml
 *.sw?
 .DS_Store
 Thumbs.db
+
+# AI files
+.superpowers/
