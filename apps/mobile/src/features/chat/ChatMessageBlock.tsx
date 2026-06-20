@@ -4,6 +4,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { theme } from '../../styles/theme';
 import { Surface } from '../../ui/Surface';
 import { SectionLabel } from '../../ui/SectionLabel';
+import { Button } from '../../ui/Button';
 import { StreamingStatus } from './StreamingStatus';
 import { MarkdownRenderer } from '../../components/MarkdownRenderer';
 
@@ -13,6 +14,9 @@ export interface ChatMessageBlockProps {
   label?: string;
   icon?: keyof typeof MaterialIcons.glyphMap;
   isSearching?: boolean;
+  isConfirmationRequired?: boolean;
+  onConfirm?: () => void;
+  onCancel?: () => void;
   style?: StyleProp<ViewStyle>;
 }
 
@@ -22,6 +26,9 @@ export function ChatMessageBlock({
   label,
   icon,
   isSearching = false,
+  isConfirmationRequired = false,
+  onConfirm,
+  onCancel,
   style,
 }: ChatMessageBlockProps) {
   if (sender === 'user') {
@@ -46,13 +53,34 @@ export function ChatMessageBlock({
             style={styles.headerIcon}
           />
         )}
-        <SectionLabel>{label || (isSearching ? 'BUSCA' : 'ANALISE')}</SectionLabel>
+        <SectionLabel>{label || (isConfirmationRequired ? 'CONFIRMAÇÃO' : isSearching ? 'BUSCA' : 'ANÁLISE')}</SectionLabel>
       </View>
       
       {isSearching ? (
         <StreamingStatus text={text} icon={icon} />
       ) : (
-        <MarkdownRenderer text={text} isUser={false} />
+        <View>
+          <MarkdownRenderer text={text} isUser={false} />
+          
+          {isConfirmationRequired && onConfirm && onCancel && (
+            <View style={styles.confirmActions}>
+              <Button
+                variant="primary"
+                onPress={onConfirm}
+                style={styles.confirmButton}
+              >
+                Confirmar
+              </Button>
+              <Button
+                variant="secondary"
+                onPress={onCancel}
+                style={styles.cancelButton}
+              >
+                Cancelar
+              </Button>
+            </View>
+          )}
+        </View>
       )}
     </Surface>
   );
@@ -91,5 +119,19 @@ const styles = StyleSheet.create({
   },
   headerIcon: {
     marginRight: theme.spacing.sm,
+  },
+  confirmActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: theme.spacing.lg,
+    gap: theme.spacing.md,
+  },
+  confirmButton: {
+    flex: 1,
+    height: 40,
+  },
+  cancelButton: {
+    flex: 1,
+    height: 40,
   },
 });

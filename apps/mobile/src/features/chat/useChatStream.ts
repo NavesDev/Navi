@@ -8,37 +8,61 @@ export interface Message {
   isSearching?: boolean;
   isCompleted?: boolean;
   icon?: string;
+  isConfirmationRequired?: boolean;
+  actions?: any[];
+  originalMessage?: string;
 }
 
 export function useChatStream(token: string) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
 
-  const sendMessage = (text: string) => {
+  const sendMessage = (text: string, confirmAction?: boolean, streamMessageIdToReuse?: string) => {
     if (text.trim() === '' || isStreaming) return;
 
-    const userMessageId = `user_${Date.now()}`;
-    const userMsg: Message = {
-      id: userMessageId,
-      sender: 'user',
-      text: text.trim(),
-      isCompleted: true,
-    };
+    const streamMessageId = streamMessageIdToReuse || `ai_stream_${Date.now()}`;
+    let historyMessages = messages;
 
-    setMessages((prev) => [...prev, userMsg]);
+    if (!confirmAction) {
+      const userMessageId = `user_${Date.now()}`;
+      const userMsg: Message = {
+        id: userMessageId,
+        sender: 'user',
+        text: text.trim(),
+        isCompleted: true,
+      };
+
+      setMessages((prev) => [...prev, userMsg]);
+      historyMessages = [...messages, userMsg];
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: streamMessageId,
+          sender: 'ai',
+          text: '',
+          isSearching: true,
+          icon: 'search',
+          originalMessage: text.trim(),
+        },
+      ]);
+    } else {
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === streamMessageId
+            ? {
+                ...msg,
+                text: '',
+                isSearching: true,
+                isConfirmationRequired: false,
+                icon: 'search',
+              }
+            : msg
+        )
+      );
+    }
+
     setIsStreaming(true);
-
-    const streamMessageId = `ai_stream_${Date.now()}`;
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: streamMessageId,
-        sender: 'ai',
-        text: '',
-        isSearching: true,
-        icon: 'search',
-      },
-    ]);
 
     let seenBytes = 0;
     let buffer = '';
@@ -97,11 +121,21 @@ export function useChatStream(token: string) {
                   isSearching: true,
                   icon: searchIcon,
                 });
+              } else if (data.status === 'confirmation_required') {
+                updateStreamMessage(streamMessageId, {
+                  text: data.message || 'Por favor, confirme a ação:',
+                  isSearching: false,
+                  isCompleted: false,
+                  isConfirmationRequired: true,
+                  actions: data.actions,
+                  icon: 'help-outline',
+                });
               } else if (data.status === 'completed') {
                 updateStreamMessage(streamMessageId, {
                   text: data.message,
                   isSearching: false,
                   isCompleted: true,
+                  isConfirmationRequired: false,
                   icon: undefined,
                 });
               }
@@ -130,19 +164,40 @@ export function useChatStream(token: string) {
     };
 
     const currentDate = new Date().toISOString();
-    const history = messages
-      .filter((m) => m.isCompleted && !m.isSearching && m.text)
+    const history = historyMessages
+      .filter((m) => m.isCompleted && !m.isSearching && m.text && !m.isConfirmationRequired)
       .map((m) => ({
         role: m.sender === 'user' ? 'user' : 'assistant',
         content: m.text,
       }));
 
-    xhr.send(
-      JSON.stringify({
-        message: userMsg.text,
-        current_date: currentDate,
-        history,
-      })
+    const payload: any = {
+      message: text.trim(),
+      current_date: currentDate,
+      history,
+    };
+
+    if (confirmAction) {
+      payload.confirm_action = true;
+    }
+
+    xhr.send(JSON.stringify(payload));
+  };
+
+  const cancelAction = (streamMessageId: string) => {
+    setMessages((prev) =>
+      prev.map((msg) =>
+        msg.id === streamMessageId
+          ? {
+              ...msg,
+              text: 'Ação cancelada pelo usuário.',
+              isSearching: false,
+              isCompleted: true,
+              isConfirmationRequired: false,
+              icon: 'close',
+            }
+          : msg
+      )
     );
   };
 
@@ -150,5 +205,6 @@ export function useChatStream(token: string) {
     messages,
     isStreaming,
     sendMessage,
+    cancelAction,
   };
 }

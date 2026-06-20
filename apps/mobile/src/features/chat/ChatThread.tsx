@@ -7,9 +7,11 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 interface ChatThreadProps {
   messages: Message[];
+  onConfirmAction: (messageId: string, originalMessage: string) => void;
+  onCancelAction: (messageId: string) => void;
 }
 
-export function ChatThread({ messages }: ChatThreadProps) {
+export function ChatThread({ messages, onConfirmAction, onCancelAction }: ChatThreadProps) {
   const scrollViewRef = useRef<ScrollView>(null);
 
   useEffect(() => {
@@ -21,6 +23,7 @@ export function ChatThread({ messages }: ChatThreadProps) {
 
   const getMessageLabel = (message: Message) => {
     if (message.isSearching) return 'BUSCA';
+    if (message.isConfirmationRequired) return 'CONFIRMAÇÃO';
     if (message.sender === 'user') return 'VOCÊ';
     return 'ANÁLISE';
   };
@@ -40,6 +43,9 @@ export function ChatThread({ messages }: ChatThreadProps) {
           label={getMessageLabel(msg)}
           icon={(msg.icon || (msg.sender === 'ai' ? 'assistant' : undefined)) as keyof typeof MaterialIcons.glyphMap}
           isSearching={msg.isSearching}
+          isConfirmationRequired={msg.isConfirmationRequired}
+          onConfirm={msg.originalMessage ? () => onConfirmAction(msg.id, msg.originalMessage!) : undefined}
+          onCancel={() => onCancelAction(msg.id)}
         />
       ))}
     </ScrollView>

@@ -14,7 +14,7 @@ interface ChatScreenProps {
 }
 
 export function ChatScreen({ token, onLogout }: ChatScreenProps) {
-  const { messages, isStreaming, sendMessage } = useChatStream(token);
+  const { messages, isStreaming, sendMessage, cancelAction } = useChatStream(token);
   const [inputText, setInputText] = useState('');
 
   const handleSend = (text: string = inputText) => {
@@ -25,6 +25,14 @@ export function ChatScreen({ token, onLogout }: ChatScreenProps) {
 
   const handleSelectSuggestion = (text: string) => {
     handleSend(text);
+  };
+
+  const handleConfirmAction = (messageId: string, originalMessage: string) => {
+    sendMessage(originalMessage, true, messageId);
+  };
+
+  const handleCancelAction = (messageId: string) => {
+    cancelAction(messageId);
   };
 
   return (
@@ -55,7 +63,11 @@ export function ChatScreen({ token, onLogout }: ChatScreenProps) {
               <ChatEmptyState onSelectSuggestion={handleSelectSuggestion} />
             </View>
           ) : (
-            <ChatThread messages={messages} />
+            <ChatThread
+              messages={messages}
+              onConfirmAction={handleConfirmAction}
+              onCancelAction={handleCancelAction}
+            />
           )}
 
           <ChatComposer
