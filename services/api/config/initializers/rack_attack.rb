@@ -1,6 +1,6 @@
 class Rack::Attack
-  # Use an in-memory cache store for tracking rate limits
-  Rack::Attack.cache.store = ActiveSupport::Cache::MemoryStore.new
+  # Use the application cache in production so limits are shared across processes.
+  Rack::Attack.cache.store = Rails.env.production? ? Rails.cache : ActiveSupport::Cache::MemoryStore.new
 
   ### Throttle Login & Register requests per IP ###
   # Allow 5 login/register requests per minute per IP
@@ -24,6 +24,21 @@ class Rack::Attack
         nil
       end
     end
+  end
+
+  ### Throttle refresh attempts per IP ###
+  throttle('auth/refresh/ip', limit: 20, period: 1.minute) do |req|
+    req.ip if req.path == '/api/v1/auth/refresh' && req.post?
+  end
+
+  ### Throttle chat requests per authenticated user or IP ###
+  throttle('chat/user_or_ip', limit: 20, period: 1.minute) do |req|
+    next unless req.path == '/api/v1/chat' && req.post?
+
+    auth_header = req.get_header('HTTP_AUTHORIZATION').to_s
+    token = auth_header.split(' ').last
+    decoded = JwtService.decode(token) if token.present?
+    decoded&.fetch(:user_id, nil) || req.ip
   end
 
   # Custom JSON response for throttled requests

@@ -96,7 +96,7 @@ class Api::V1::AuthTest < ActionDispatch::IntegrationTest
   test "should return new access and refresh tokens when refresh token is valid" do
     # Arrange
     rt = @user.refresh_tokens.create!(expires_at: 1.day.from_now)
-    params = { refresh_token: rt.token }
+    params = { refresh_token: rt.plaintext_token }
 
     # Act
     post "/api/v1/auth/refresh", params: params, as: :json
@@ -106,14 +106,25 @@ class Api::V1::AuthTest < ActionDispatch::IntegrationTest
     json_response = JSON.parse(response.body)
     assert_not_nil json_response["token"]
     assert_not_nil json_response["refresh_token"]
-    assert_not_equal rt.token, json_response["refresh_token"]
+    assert_not_equal rt.plaintext_token, json_response["refresh_token"]
     assert_nil RefreshToken.find_by(id: rt.id)
+  end
+
+  test "should not persist refresh token in plaintext" do
+    post "/api/v1/auth/login", params: { username: @user.username, password: "secret123" }, as: :json
+
+    assert_response :ok
+    raw_refresh_token = JSON.parse(response.body)["refresh_token"]
+    persisted_values = RefreshToken.where(user: @user).pluck(:token)
+
+    assert_not_includes persisted_values, raw_refresh_token
+    assert RefreshToken.find_by_token(raw_refresh_token)
   end
 
   test "should return unauthorized when refresh token is expired" do
     # Arrange
     rt = @user.refresh_tokens.create!(expires_at: 1.day.ago)
-    params = { refresh_token: rt.token }
+    params = { refresh_token: rt.plaintext_token }
 
     # Act
     post "/api/v1/auth/refresh", params: params, as: :json
@@ -140,7 +151,7 @@ class Api::V1::AuthTest < ActionDispatch::IntegrationTest
   test "should logout successfully when refresh token is valid" do
     # Arrange
     rt = @user.refresh_tokens.create!(expires_at: 1.day.from_now)
-    params = { refresh_token: rt.token }
+    params = { refresh_token: rt.plaintext_token }
 
     # Act
     post "/api/v1/auth/logout", params: params, as: :json
@@ -210,5 +221,16 @@ class Api::V1::AuthTest < ActionDispatch::IntegrationTest
     assert_response :too_many_requests
     json_response = JSON.parse(response.body)
     assert_match /rate limit exceeded/i, json_response["error"]
+  end
+
+  test "should rate limit refresh attempts" do
+    20.times do
+      post "/api/v1/auth/refresh", params: { refresh_token: "invalid_token_123" }, as: :json
+      assert_not_equal 429, response.status
+    end
+
+    post "/api/v1/auth/refresh", params: { refresh_token: "invalid_token_123" }, as: :json
+
+    assert_response :too_many_requests
   end
 end

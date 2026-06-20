@@ -17,7 +17,7 @@ module Api
           render json: {
             user: { username: user.username },
             token: token,
-            refresh_token: refresh_token.token
+            refresh_token: refresh_token.plaintext_token
           }, status: :created
         else
           render json: { error: user.errors.full_messages.join(', ') }, status: :unprocessable_entity
@@ -33,7 +33,7 @@ module Api
           render json: {
             user: { username: user.username },
             token: token,
-            refresh_token: refresh_token.token
+            refresh_token: refresh_token.plaintext_token
           }, status: :ok
         else
           render json: { error: 'Invalid username or password' }, status: :unauthorized
@@ -42,7 +42,7 @@ module Api
 
       # POST /api/v1/auth/refresh
       def refresh
-        refresh_token = RefreshToken.find_by(token: params[:refresh_token])
+        refresh_token = RefreshToken.find_by_token(params[:refresh_token])
 
         if refresh_token.nil? || refresh_token.expired?
           render json: { error: 'Invalid or expired refresh token' }, status: :unauthorized
@@ -55,13 +55,13 @@ module Api
 
         render json: {
           token: access_token,
-          refresh_token: new_refresh_token.token
+          refresh_token: new_refresh_token.plaintext_token
         }, status: :ok
       end
 
       # POST /api/v1/auth/logout
       def logout
-        refresh_token = RefreshToken.find_by(token: params[:refresh_token])
+        refresh_token = RefreshToken.find_by_token(params[:refresh_token])
         if refresh_token
           refresh_token.destroy
           render json: { message: 'Logged out successfully' }, status: :ok
